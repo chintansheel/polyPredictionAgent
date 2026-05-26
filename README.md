@@ -6,7 +6,9 @@ using **4 distinct tools**, makes a concrete sub-prediction about the
 underlying data event driving the market, and publishes a plain-English
 intelligence card to a local JSON feed and a minimal web UI.
 
-No trading. No wallet. No auth. Pure research and reasoning.
+No trading. No wallet. Pure research and reasoning.
+
+A **Foretell** web app (`web/`) provides a landing page, email/password signup and login, and a protected feed UI at `/app`.
 
 Every agent action is traced in **OpenTelemetry-compatible JSON** so
 external monitoring (e.g. the Discovery Agent) can ingest the traces
@@ -29,6 +31,7 @@ cp .env.example .env
 #   TAVILY_API_KEY=tvly-...
 #   EXA_API_KEY=...
 #   ANTHROPIC_MODEL=claude-sonnet-4-6   # must be a real model id from Anthropic docs
+#   AUTH_SECRET=...                     # long random string for session cookies
 
 # 3. Run once (manual trigger)
 python test_run.py                        # default — uses category rotation
@@ -39,11 +42,28 @@ python test_run.py --force                # ignore cooldowns
 # 4. Run on a 2-hour cron
 python -m agent.main
 
-# 5. View the feed in a browser
-# Open ui/index.html (serve via any static file server, e.g.)
-python -m http.server 8000
-# → http://localhost:8000/ui/index.html
+# 5. Run the web app (landing, auth, protected feed)
+#    Do NOT use `python -m http.server` — /signup, /login, and auth will 404.
+python run_web.py
+# → http://localhost:8000/          landing page
+# → http://localhost:8000/signup    create account
+# → http://localhost:8000/login     sign in
+# → http://localhost:8000/app       feed (requires login)
+# → http://localhost:8000/app/run   start a new analysis (topic / category / market)
 ```
+
+### Web UI: run your own analysis
+
+After signing in:
+
+1. Open **http://localhost:8000/app/run**
+2. Choose **Fresh analysis** (topic keyword, category, or market id/slug) or **Re-analysis** (prior run or market from your feed)
+3. Submit — the run executes in the background (~1–2 minutes). The page polls until complete.
+4. Results appear on **/app** (your personal feed only)
+
+User runs are stored under `output/users/{user_id}/` (feed, traces, scorecard). The scheduled agent (`python -m agent.main`) still writes to the global `output/feed.json` and is separate from per-user web feeds.
+
+Rate limits (`.env`): `WEB_MAX_CONCURRENT_RUNS` (default 1), `WEB_RUNS_PER_USER_PER_DAY` (default 5).
 
 ### Anthropic rate limits (HTTP 429)
 
@@ -68,13 +88,12 @@ request is still over your TPM, shorten prompts or raise your Anthropic limit.
 ## What gets produced per run
 
 ```
-output/feed.json          # append-only history of cards
-output/latest.json        # the most recent card
-output/run_health.json    # per-run automated quality checks
-output/scorecard.json     # rolled-up prediction accuracy
-traces/trace_<run_id>.json # full OpenTelemetry trace
+output/feed.json          # scheduled agent feed (global)
+output/users/{user_id}/   # per-user web runs (feed, traces, scorecard)
+traces/trace_<run_id>.json # scheduled-agent traces (global TRACES_DIR)
 state/analysed_topics.json # 48hr cooldown tracker
 state/category_rotation.json
+state/users.db            # web app users + agent_jobs (git-ignored with state/)
 ```
 
 ---
@@ -120,8 +139,8 @@ python scorecard.py
 
 ## Hard rules (don't break)
 
-- No database. Flat JSON files only.
-- No web framework. UI is a single static HTML file.
+- Agent state uses flat JSON files only (no SQL for agent data).
+- Web UI is static HTML served by FastAPI in `web/`; feed JSON is not publicly mounted.
 - No LangChain. Raw Anthropic SDK — Discovery Agent monitors raw tool calls.
 - All prompts live in `agent/prompts/`. Never inline prompt strings.
 - Every tool call and every LLM call goes through `tracer.py`.

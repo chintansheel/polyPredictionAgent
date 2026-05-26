@@ -1,0 +1,1430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Foretell — The AI agent that reads the news, watches the markets, and tells you what comes next.</title>
+<meta name="description" content="Foretell is an analysis agent that reads filings, news, polls and press releases to forecast where markets, elections and matches are heading. Free 7-day trial. No card required." />
+
+<link rel="stylesheet" href="/ui/theme.css" />
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-weight:400;
+  line-height:1.55;
+  overflow-x:hidden;
+}
+
+a{color:inherit;text-decoration:none}
+button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit}
+
+.wrap{
+  max-width:1240px;
+  margin:0 auto;
+  padding:0 32px;
+  position:relative;
+  z-index:2;
+}
+
+/* ============ NAV ============ */
+.nav{
+  position:sticky;
+  top:0;
+  z-index:50;
+  background:rgba(11,13,16,0.85);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.nav-inner{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:18px 0;
+}
+.logo{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  font-family:var(--serif);
+  font-size:26px;
+  letter-spacing:-0.02em;
+}
+.logo-mark{
+  width:28px;
+  height:28px;
+  border:1.5px solid var(--accent);
+  border-radius:50%;
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.logo-mark::before{
+  content:'';
+  width:8px;
+  height:8px;
+  background:var(--accent);
+  border-radius:50%;
+  box-shadow:0 0 12px var(--accent);
+}
+.nav-links{
+  display:flex;
+  gap:34px;
+  font-size:14px;
+  color:var(--muted);
+}
+.nav-links a:hover{color:var(--text)}
+.nav-cta{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+.btn{
+  display:inline-flex;
+  align-items:center;
+  gap:8px;
+  padding:11px 20px;
+  border-radius:999px;
+  font-size:14px;
+  font-weight:500;
+  letter-spacing:-0.005em;
+  transition:all .2s ease;
+  border:1px solid transparent;
+}
+.btn-ghost{
+  color:var(--muted);
+}
+.btn-ghost:hover{color:var(--text)}
+.btn-primary{
+  background:var(--accent);
+  color:var(--bg);
+}
+.btn-primary:hover{
+  opacity:0.9;
+  transform:translateY(-1px);
+}
+.btn-outline{
+  border:1px solid var(--border);
+  color:var(--text);
+}
+.btn-outline:hover{
+  border-color:var(--text);
+}
+@media(max-width:760px){
+  .nav-links{display:none}
+}
+
+/* ============ HERO ============ */
+.hero{
+  padding:72px 0 90px;
+  position:relative;
+}
+.eyebrow{
+  display:inline-flex;
+  align-items:center;
+  gap:10px;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--accent);
+  padding:6px 14px;
+  border:1px solid rgba(110,168,255,0.3);
+  border-radius:999px;
+  background:rgba(110,168,255,0.05);
+  margin-bottom:36px;
+  animation:fadeUp .8s ease both;
+}
+.eyebrow .dot{
+  width:6px;height:6px;background:var(--accent);border-radius:50%;
+  box-shadow:0 0 8px var(--accent);
+  animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{
+  0%,100%{opacity:1}
+  50%{opacity:.4}
+}
+
+.hero h1{
+  font-family:var(--serif);
+  font-size:clamp(46px, 7.5vw, 96px);
+  line-height:0.98;
+  letter-spacing:-0.025em;
+  font-weight:400;
+  max-width:14ch;
+  margin-bottom:32px;
+  animation:fadeUp .9s ease .1s both;
+}
+.hero h1 em{
+  font-style:italic;
+  color:var(--accent);
+  font-weight:400;
+}
+.hero h1 .strike{
+  position:relative;
+  display:inline-block;
+}
+.hero-sub{
+  font-size:clamp(17px,1.4vw,20px);
+  color:var(--muted);
+  max-width:54ch;
+  line-height:1.55;
+  margin-bottom:40px;
+  animation:fadeUp 1s ease .2s both;
+}
+.hero-sub strong{color:var(--text);font-weight:500}
+
+.hero-actions{
+  display:flex;
+  gap:14px;
+  align-items:center;
+  flex-wrap:wrap;
+  margin-bottom:28px;
+  animation:fadeUp 1.1s ease .3s both;
+}
+.btn-lg{padding:15px 26px;font-size:15px}
+
+.hero-microtrust{
+  display:flex;
+  gap:24px;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.08em;
+  color:var(--dim);
+  text-transform:uppercase;
+  flex-wrap:wrap;
+  animation:fadeUp 1.2s ease .4s both;
+}
+.hero-microtrust span{display:flex;align-items:center;gap:8px}
+.hero-microtrust span::before{
+  content:'';width:5px;height:5px;background:var(--good);border-radius:50%;
+}
+
+/* ============ HERO DEMO CARD ============ */
+.hero-grid{
+  display:grid;
+  grid-template-columns:1.1fr 0.9fr;
+  gap:60px;
+  align-items:start;
+}
+@media(max-width:980px){
+  .hero-grid{grid-template-columns:1fr;gap:50px}
+}
+
+.agent-card{
+  background:linear-gradient(180deg, var(--panel) 0%, var(--panel-2) 100%);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:24px;
+  position:relative;
+  overflow:hidden;
+  animation:fadeUp 1s ease .5s both;
+  box-shadow:0 30px 80px rgba(0,0,0,0.4), 0 0 0 1px rgba(110,168,255,0.04);
+}
+.agent-card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:1px;
+  background:linear-gradient(90deg, transparent, rgba(110,168,255,0.5), transparent);
+}
+.agent-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding-bottom:18px;
+  border-bottom:1px solid var(--border);
+  margin-bottom:18px;
+}
+.agent-tag{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--dim);
+}
+.agent-status{
+  display:flex;
+  align-items:center;
+  gap:6px;
+  font-family:var(--mono);
+  font-size:11px;
+  color:var(--good);
+}
+.agent-status::before{
+  content:'';width:6px;height:6px;border-radius:50%;background:var(--good);
+  box-shadow:0 0 8px var(--good);animation:pulse 1.5s ease-in-out infinite;
+}
+.agent-q{
+  font-family:var(--serif);
+  font-size:24px;
+  line-height:1.15;
+  margin-bottom:20px;
+  letter-spacing:-0.01em;
+}
+.agent-thinking{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--muted);
+  margin-bottom:20px;
+  min-height:18px;
+}
+.agent-thinking .cursor{
+  display:inline-block;
+  width:7px;
+  height:13px;
+  background:var(--accent);
+  vertical-align:-2px;
+  margin-left:2px;
+  animation:blink 1s steps(2) infinite;
+}
+@keyframes blink{50%{opacity:0}}
+
+.signals{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:22px;
+}
+.signal{
+  display:grid;
+  grid-template-columns:auto 1fr auto;
+  gap:12px;
+  align-items:center;
+  padding:11px 14px;
+  background:rgba(231,236,243,0.04);
+  border:1px solid var(--border);
+  border-radius:10px;
+  font-size:13px;
+  opacity:0;
+  animation:slideIn .5s ease forwards;
+}
+.signal.s1{animation-delay:.8s}
+.signal.s2{animation-delay:1.4s}
+.signal.s3{animation-delay:2s}
+.signal.s4{animation-delay:2.6s}
+@keyframes slideIn{
+  from{opacity:0;transform:translateY(8px)}
+  to{opacity:1;transform:translateY(0)}
+}
+.signal-icon{
+  width:24px;height:24px;border-radius:6px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:600;
+}
+.icon-pos{background:rgba(93,211,158,0.12);color:var(--good)}
+.icon-neg{background:rgba(255,118,118,0.12);color:var(--bad)}
+.icon-neu{background:rgba(138,150,164,0.12);color:var(--muted)}
+.signal-text{color:var(--muted);line-height:1.4}
+.signal-text strong{color:var(--text);font-weight:500}
+.signal-src{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--dim);
+  white-space:nowrap;
+}
+
+.verdict{
+  background:rgba(110,168,255,0.06);
+  border:1px solid rgba(110,168,255,0.25);
+  border-radius:12px;
+  padding:18px;
+  opacity:0;
+  animation:slideIn .6s ease 3.2s forwards;
+}
+.verdict-label{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:8px;
+}
+.verdict-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-end;
+  gap:18px;
+}
+.verdict-call{
+  font-family:var(--serif);
+  font-size:32px;
+  line-height:1;
+  letter-spacing:-0.02em;
+}
+.verdict-call em{color:var(--bad);font-style:italic}
+.verdict-conf{
+  text-align:right;
+}
+.verdict-conf-num{
+  font-family:var(--serif);
+  font-size:32px;
+  line-height:1;
+  color:var(--accent);
+  font-style:italic;
+}
+.verdict-conf-lbl{
+  font-family:var(--mono);
+  font-size:10px;
+  color:var(--dim);
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  margin-top:4px;
+}
+
+/* ============ HERO STATS ============ */
+.hero-stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:1px;
+  background:var(--border);
+  margin-top:90px;
+  border:1px solid var(--border);
+  border-radius:14px;
+  overflow:hidden;
+}
+@media(max-width:760px){
+  .hero-stats{grid-template-columns:repeat(2,1fr)}
+}
+.stat{
+  background:var(--bg);
+  padding:24px 28px;
+}
+.stat-num{
+  font-family:var(--serif);
+  font-size:42px;
+  letter-spacing:-0.02em;
+  line-height:1;
+  color:var(--text);
+}
+.stat-num em{font-style:italic;color:var(--accent)}
+.stat-lbl{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.1em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-top:10px;
+}
+
+/* ============ SOURCES MARQUEE ============ */
+.sources{
+  padding:60px 0 30px;
+  border-top:1px solid var(--border);
+}
+.sources-label{
+  text-align:center;
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.18em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:30px;
+}
+.marquee{
+  overflow:hidden;
+  -webkit-mask-image:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+  mask-image:linear-gradient(90deg, transparent, #000 15%, #000 85%, transparent);
+}
+.marquee-track{
+  display:flex;
+  gap:60px;
+  width:max-content;
+  animation:scroll 36s linear infinite;
+}
+@keyframes scroll{
+  from{transform:translateX(0)}
+  to{transform:translateX(-50%)}
+}
+.marquee-item{
+  font-family:var(--serif);
+  font-size:24px;
+  color:var(--muted);
+  letter-spacing:-0.01em;
+  white-space:nowrap;
+  display:flex;
+  align-items:center;
+  gap:60px;
+}
+.marquee-item::after{
+  content:'·';
+  color:var(--accent);
+}
+
+/* ============ SECTION FRAME ============ */
+.section{
+  padding:120px 0;
+  position:relative;
+}
+.section-eyebrow{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--accent);
+  margin-bottom:24px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.section-eyebrow::before{
+  content:'';
+  width:24px;
+  height:1px;
+  background:var(--accent);
+}
+.section-title{
+  font-family:var(--serif);
+  font-size:clamp(38px,5vw,68px);
+  line-height:1.02;
+  letter-spacing:-0.02em;
+  max-width:18ch;
+  margin-bottom:24px;
+}
+.section-title em{font-style:italic;color:var(--accent)}
+.section-sub{
+  font-size:18px;
+  color:var(--muted);
+  max-width:62ch;
+  line-height:1.55;
+}
+
+/* ============ HOW IT THINKS ============ */
+.how-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:24px;
+  margin-top:80px;
+  counter-reset:step;
+}
+@media(max-width:900px){
+  .how-grid{grid-template-columns:1fr;gap:18px}
+}
+.how-card{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:36px 30px;
+  position:relative;
+  transition:all .3s ease;
+  counter-increment:step;
+}
+.how-card:hover{
+  border-color:rgba(110,168,255,0.3);
+  transform:translateY(-3px);
+}
+.how-card::before{
+  content:counter(step, decimal-leading-zero);
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:88px;
+  color:var(--accent);
+  opacity:0.18;
+  position:absolute;
+  top:14px;
+  right:24px;
+  line-height:1;
+}
+.how-card h3{
+  font-family:var(--serif);
+  font-size:30px;
+  font-weight:400;
+  letter-spacing:-0.01em;
+  margin-bottom:14px;
+  position:relative;
+}
+.how-card p{
+  color:var(--muted);
+  font-size:15px;
+  line-height:1.6;
+  margin-bottom:22px;
+}
+.how-card .tags{
+  display:flex;
+  flex-wrap:wrap;
+  gap:6px;
+}
+.tag{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.05em;
+  text-transform:uppercase;
+  color:var(--muted);
+  padding:5px 10px;
+  border:1px solid var(--border);
+  border-radius:999px;
+}
+
+/* ============ USE CASES ============ */
+.usecases{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin-top:60px;
+}
+@media(max-width:900px){
+  .usecases{grid-template-columns:1fr}
+}
+.usecase{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:32px;
+  position:relative;
+  overflow:hidden;
+}
+.usecase-icon{
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:38px;
+  color:var(--accent);
+  margin-bottom:18px;
+  letter-spacing:-0.02em;
+}
+.usecase h3{
+  font-family:var(--serif);
+  font-size:26px;
+  font-weight:400;
+  margin-bottom:12px;
+  letter-spacing:-0.01em;
+}
+.usecase p{
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.6;
+  margin-bottom:20px;
+}
+.usecase .example{
+  font-family:var(--mono);
+  font-size:12px;
+  color:var(--dim);
+  padding:14px;
+  background:rgba(231,236,243,0.04);
+  border-left:2px solid var(--accent);
+  border-radius:0 6px 6px 0;
+  line-height:1.6;
+}
+.usecase .example b{color:var(--muted);font-weight:500}
+
+/* ============ TRUST GRID ============ */
+.trust-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:1px;
+  background:var(--border);
+  margin-top:80px;
+  border:1px solid var(--border);
+  border-radius:18px;
+  overflow:hidden;
+}
+@media(max-width:760px){.trust-grid{grid-template-columns:1fr}}
+.trust-cell{
+  background:var(--bg);
+  padding:42px 36px;
+}
+.trust-num{
+  font-family:var(--serif);
+  font-style:italic;
+  font-size:14px;
+  color:var(--accent);
+  margin-bottom:18px;
+  display:block;
+}
+.trust-cell h3{
+  font-family:var(--serif);
+  font-size:28px;
+  font-weight:400;
+  letter-spacing:-0.01em;
+  margin-bottom:14px;
+  line-height:1.15;
+}
+.trust-cell p{
+  color:var(--muted);
+  font-size:14.5px;
+  line-height:1.6;
+}
+
+/* ============ TESTIMONIALS ============ */
+.testimonials{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:20px;
+  margin-top:60px;
+}
+@media(max-width:900px){
+  .testimonials{grid-template-columns:1fr}
+}
+.tcard{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:18px;
+  padding:32px 28px;
+  display:flex;
+  flex-direction:column;
+}
+.stars{
+  color:var(--accent);
+  font-size:14px;
+  letter-spacing:2px;
+  margin-bottom:16px;
+}
+.tcard blockquote{
+  font-family:var(--serif);
+  font-size:21px;
+  line-height:1.3;
+  letter-spacing:-0.005em;
+  margin-bottom:24px;
+  flex:1;
+}
+.tcard blockquote em{color:var(--accent);font-style:italic}
+.tperson{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding-top:20px;
+  border-top:1px solid var(--border);
+}
+.tavatar{
+  width:36px;height:36px;border-radius:50%;
+  background:linear-gradient(135deg, var(--accent), var(--dim));
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--serif);
+  font-style:italic;
+  color:var(--bg);
+  font-size:16px;
+}
+.tname{font-size:14px;font-weight:500}
+.tmeta{font-size:12px;color:var(--dim);font-family:var(--mono)}
+
+/* ============ PRICING ============ */
+.pricing-wrap{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px;
+  margin-top:60px;
+}
+@media(max-width:760px){.pricing-wrap{grid-template-columns:1fr}}
+.plan{
+  background:var(--panel);
+  border:1px solid var(--border);
+  border-radius:20px;
+  padding:36px 32px;
+  position:relative;
+}
+.plan.featured{
+  background:linear-gradient(180deg, rgba(110,168,255,0.08), var(--panel));
+  border-color:rgba(110,168,255,0.3);
+}
+.plan-badge{
+  position:absolute;
+  top:18px;right:24px;
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.15em;
+  text-transform:uppercase;
+  color:var(--accent);
+  padding:5px 10px;
+  border:1px solid rgba(110,168,255,0.3);
+  border-radius:999px;
+  background:rgba(110,168,255,0.08);
+}
+.plan-name{
+  font-family:var(--mono);
+  font-size:11px;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:16px;
+}
+.plan-price{
+  font-family:var(--serif);
+  font-size:62px;
+  line-height:1;
+  letter-spacing:-0.025em;
+  margin-bottom:6px;
+}
+.plan-price em{color:var(--accent);font-style:italic}
+.plan-price small{font-size:18px;color:var(--muted);font-style:normal;font-family:var(--sans)}
+.plan-tag{
+  font-size:14px;
+  color:var(--muted);
+  margin-bottom:28px;
+}
+.plan ul{
+  list-style:none;
+  margin-bottom:32px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+.plan li{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+  font-size:14.5px;
+  color:var(--muted);
+  line-height:1.5;
+}
+.plan li::before{
+  content:'';
+  width:18px;height:18px;
+  background:rgba(110,168,255,0.12);
+  border:1px solid var(--accent);
+  border-radius:50%;
+  position:relative;
+  flex-shrink:0;
+  margin-top:2px;
+}
+.plan li::after{
+  content:'✓';
+  position:absolute;
+  margin-left:4px;
+  margin-top:1px;
+  color:var(--accent);
+  font-size:11px;
+  font-weight:700;
+}
+.plan li{position:relative}
+
+.plan .btn{width:100%;justify-content:center;padding:14px}
+
+/* ============ FAQ ============ */
+.faq{
+  max-width:780px;
+  margin:60px auto 0;
+  display:flex;
+  flex-direction:column;
+}
+.faq-item{
+  border-top:1px solid var(--border);
+}
+.faq-item:last-child{border-bottom:1px solid var(--border)}
+.faq-q{
+  width:100%;
+  padding:28px 0;
+  text-align:left;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:24px;
+  font-family:var(--serif);
+  font-size:24px;
+  letter-spacing:-0.01em;
+  color:var(--text);
+  transition:color .2s;
+}
+.faq-q:hover{color:var(--accent)}
+.faq-q .plus{
+  width:32px;height:32px;
+  border:1px solid var(--border);
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:16px;
+  color:var(--accent);
+  flex-shrink:0;
+  transition:all .3s;
+}
+.faq-item.open .faq-q .plus{
+  transform:rotate(45deg);
+  background:var(--accent);
+  color:var(--bg);
+  border-color:var(--accent);
+}
+.faq-a{
+  max-height:0;
+  overflow:hidden;
+  transition:max-height .4s ease;
+}
+.faq-item.open .faq-a{max-height:300px}
+.faq-a-inner{
+  padding:0 0 28px 0;
+  color:var(--muted);
+  font-size:16px;
+  line-height:1.65;
+  max-width:62ch;
+}
+
+/* ============ FINAL CTA ============ */
+.final-cta{
+  text-align:center;
+  padding:140px 0 120px;
+  border-top:1px solid var(--border);
+  position:relative;
+}
+.final-cta::before{
+  content:'';
+  position:absolute;
+  inset:0;
+  background:radial-gradient(circle at center top, rgba(110,168,255,0.06), transparent 60%);
+  pointer-events:none;
+}
+.final-cta h2{
+  font-family:var(--serif);
+  font-size:clamp(48px,7vw,90px);
+  line-height:1;
+  letter-spacing:-0.025em;
+  margin-bottom:30px;
+  max-width:18ch;
+  margin-left:auto;
+  margin-right:auto;
+  position:relative;
+}
+.final-cta h2 em{color:var(--accent);font-style:italic}
+.final-cta p{
+  color:var(--muted);
+  font-size:18px;
+  max-width:50ch;
+  margin:0 auto 36px;
+  position:relative;
+}
+.final-cta .hero-actions{justify-content:center;position:relative}
+
+/* ============ FOOTER ============ */
+footer{
+  border-top:1px solid var(--border);
+  padding:60px 0 40px;
+}
+.foot-grid{
+  display:grid;
+  grid-template-columns:2fr 1fr 1fr 1fr;
+  gap:60px;
+  margin-bottom:50px;
+}
+@media(max-width:800px){
+  .foot-grid{grid-template-columns:1fr 1fr;gap:40px}
+}
+.foot-brand p{
+  color:var(--muted);
+  font-size:14px;
+  margin-top:14px;
+  max-width:36ch;
+  line-height:1.6;
+}
+.foot-col h5{
+  font-family:var(--mono);
+  font-size:10px;
+  letter-spacing:0.2em;
+  text-transform:uppercase;
+  color:var(--dim);
+  margin-bottom:18px;
+  font-weight:500;
+}
+.foot-col ul{list-style:none;display:flex;flex-direction:column;gap:11px}
+.foot-col a{
+  font-size:14px;
+  color:var(--muted);
+  transition:color .2s;
+}
+.foot-col a:hover{color:var(--text)}
+
+.disclaimer{
+  border-top:1px solid var(--border);
+  padding-top:28px;
+  font-size:12px;
+  color:var(--dim);
+  line-height:1.7;
+  font-family:var(--mono);
+  letter-spacing:0.02em;
+  max-width:96ch;
+}
+.disclaimer strong{color:var(--muted);font-weight:500;text-transform:uppercase;letter-spacing:0.1em;font-size:11px;display:block;margin-bottom:8px}
+
+.copy{
+  margin-top:28px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  font-size:12px;
+  color:var(--dim);
+  font-family:var(--mono);
+}
+@media(max-width:600px){
+  .copy{flex-direction:column;gap:14px;text-align:center}
+}
+
+@keyframes fadeUp{
+  from{opacity:0;transform:translateY(20px)}
+  to{opacity:1;transform:translateY(0)}
+}
+
+/* Underline accent */
+.ul-acc{
+  position:relative;
+  display:inline-block;
+}
+.ul-acc::after{
+  content:'';
+  position:absolute;
+  left:0;right:0;bottom:0.1em;
+  height:0.08em;
+  background:var(--accent);
+  opacity:0.4;
+}
+
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<nav class="nav">
+  <div class="wrap nav-inner">
+    <a href="/" class="logo">
+      <span class="logo-mark"></span>
+      Foretell
+    </a>
+    <div class="nav-links">
+      <a href="#how">How it thinks</a>
+      <a href="#usecases">What it analyses</a>
+      <a href="#pricing">Pricing</a>
+      <a href="#faq">FAQ</a>
+    </div>
+    <div class="nav-cta">
+      <a href="/login" class="btn btn-ghost">Sign in</a>
+      <a href="/signup" class="btn btn-primary">Start free trial</a>
+    </div>
+  </div>
+</nav>
+
+<!-- ============ HERO ============ -->
+<section class="hero">
+  <div class="wrap">
+    <div class="hero-grid">
+      <div>
+        <div class="eyebrow"><span class="dot"></span>The AI analysis agent · Markets · Politics · Sport</div>
+        <h1>
+          The market <em>tells you</em> what already happened.<br>
+          Foretell tells you <span class="ul-acc">what's next.</span>
+        </h1>
+        <p class="hero-sub">
+          Foretell is an autonomous research agent that reads the filings, the press releases, the polls, the post-game notes — then shows you, with sources, <strong>where the line is heading.</strong> Markets, elections, matches. One agent. No hot takes.
+        </p>
+        <div class="hero-actions">
+          <a href="/signup" class="btn btn-primary btn-lg">Start 7-day free trial →</a>
+          <a href="#how" class="btn btn-outline btn-lg">See how it thinks</a>
+        </div>
+        <div class="hero-microtrust">
+          <span>No card required</span>
+          <span>Cancel in one click</span>
+          <span>Every claim cited</span>
+        </div>
+      </div>
+
+      <!-- Agent live demo card -->
+      <div class="agent-card">
+        <div class="agent-head">
+          <span class="agent-tag">FORETELL · LIVE ANALYSIS</span>
+          <span class="agent-status">Analysing</span>
+        </div>
+        <div class="agent-q">Will Tesla shares drop next week?</div>
+        <div class="agent-thinking" id="thinker">Reading 14 sources<span class="cursor"></span></div>
+
+        <div class="signals">
+          <div class="signal s1">
+            <span class="signal-icon icon-neg">▼</span>
+            <span class="signal-text"><strong>Q1 delivery miss</strong> — 386K vs 457K consensus</span>
+            <span class="signal-src">10-Q · SEC</span>
+          </div>
+          <div class="signal s2">
+            <span class="signal-icon icon-neg">▼</span>
+            <span class="signal-text"><strong>China price cut</strong> announced 2 days ago across Model Y trims</span>
+            <span class="signal-src">CN press release</span>
+          </div>
+          <div class="signal s3">
+            <span class="signal-icon icon-pos">▲</span>
+            <span class="signal-text"><strong>Robotaxi event</strong> rescheduled — analyst notes mostly positive</span>
+            <span class="signal-src">Bloomberg · 3 notes</span>
+          </div>
+          <div class="signal s4">
+            <span class="signal-icon icon-neu">●</span>
+            <span class="signal-text"><strong>Insider selling</strong> filed F4s — 2 directors, modest size</span>
+            <span class="signal-src">SEC EDGAR</span>
+          </div>
+        </div>
+
+        <div class="verdict">
+          <div class="verdict-label">Foretell's view · 7-day horizon</div>
+          <div class="verdict-row">
+            <div class="verdict-call">Likely <em>down</em></div>
+            <div class="verdict-conf">
+              <div class="verdict-conf-num">68%</div>
+              <div class="verdict-conf-lbl">Confidence</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HERO STATS -->
+    <div class="hero-stats">
+      <div class="stat">
+        <div class="stat-num"><em>2,400+</em></div>
+        <div class="stat-lbl">Sources tracked daily</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><em>11s</em></div>
+        <div class="stat-lbl">Avg time to fresh forecast</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><em>3</em></div>
+        <div class="stat-lbl">Domains in one agent</div>
+      </div>
+      <div class="stat">
+        <div class="stat-num"><em>100%</em></div>
+        <div class="stat-lbl">Predictions logged publicly</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SOURCES MARQUEE ============ -->
+<section class="sources">
+  <div class="wrap">
+    <div class="sources-label">Pulls signal from the sources you'd read if you had the time</div>
+  </div>
+  <div class="marquee">
+    <div class="marquee-track">
+      <div class="marquee-item">SEC EDGAR<span></span>Reuters<span></span>Bloomberg<span></span>Polymarket<span></span>Kalshi<span></span>FiveThirtyEight<span></span>Opta<span></span>Financial Times<span></span>The Economist<span></span>Election Commission filings<span></span>ESPN<span></span>X / Twitter<span></span>Wall Street Journal<span></span>Hansard<span></span>Press Trust of India</div>
+      <div class="marquee-item">SEC EDGAR<span></span>Reuters<span></span>Bloomberg<span></span>Polymarket<span></span>Kalshi<span></span>FiveThirtyEight<span></span>Opta<span></span>Financial Times<span></span>The Economist<span></span>Election Commission filings<span></span>ESPN<span></span>X / Twitter<span></span>Wall Street Journal<span></span>Hansard<span></span>Press Trust of India</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ HOW IT THINKS ============ -->
+<section class="section" id="how">
+  <div class="wrap">
+    <div class="section-eyebrow">The method</div>
+    <h2 class="section-title">No black boxes. <em>Every call shows its work.</em></h2>
+    <p class="section-sub">Most AI tools hand you an answer and ask you to trust it. Foretell shows you the chain — every source it read, every signal it weighed, every assumption it made. You see the verdict <em>and</em> the reasoning underneath. Disagree with the agent? You'll know exactly where.</p>
+
+    <div class="how-grid">
+      <div class="how-card">
+        <h3>Ingest</h3>
+        <p>Foretell pulls from filings, news wires, press releases, polling aggregates, prediction markets, and primary documents — refreshed continuously through the day.</p>
+        <div class="tags">
+          <span class="tag">SEC EDGAR</span>
+          <span class="tag">News wires</span>
+          <span class="tag">Polling</span>
+          <span class="tag">Match data</span>
+        </div>
+      </div>
+      <div class="how-card">
+        <h3>Reason</h3>
+        <p>The agent isolates the signals that historically move the outcome you asked about, weighs them against counter-signals, and notes anything that contradicts the consensus narrative.</p>
+        <div class="tags">
+          <span class="tag">Causal weighting</span>
+          <span class="tag">Counter-signals</span>
+          <span class="tag">Base rates</span>
+        </div>
+      </div>
+      <div class="how-card">
+        <h3>Forecast</h3>
+        <p>You get a directional call with a calibrated confidence percentage, every source linked, and a plain-English explanation you can take to anyone. No jargon. No hedging.</p>
+        <div class="tags">
+          <span class="tag">Direction</span>
+          <span class="tag">Confidence</span>
+          <span class="tag">Citations</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ USE CASES ============ -->
+<section class="section" id="usecases" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-eyebrow">Three domains, one agent</div>
+    <h2 class="section-title">Ask it about <em>anything with an outcome.</em></h2>
+    <p class="section-sub">Stocks, elections, matches — the underlying problem is identical: read everything, weigh it, point in a direction. Foretell does it for all three from a single conversation.</p>
+
+    <div class="usecases">
+      <div class="usecase">
+        <div class="usecase-icon">Markets</div>
+        <h3>Stocks &amp; crypto</h3>
+        <p>Earnings, filings, analyst notes, macro releases, insider activity — Foretell synthesises the signals that actually move price into a 1-week or 1-month forecast.</p>
+        <div class="example"><b>You ask:</b><br>"Will Nvidia close higher this Friday?"</div>
+      </div>
+      <div class="usecase">
+        <div class="usecase-icon">Politics</div>
+        <h3>Elections &amp; policy</h3>
+        <p>Polling trends, campaign coverage, debate sentiment, candidate filings, prediction-market lines — combined into a probability for who wins, what passes, what shifts.</p>
+        <div class="example"><b>You ask:</b><br>"Which candidate is most likely to win the Maharashtra CM seat?"</div>
+      </div>
+      <div class="usecase">
+        <div class="usecase-icon">Sport</div>
+        <h3>Match outcomes</h3>
+        <p>Form, lineups, head-to-head history, injury reports, surface and venue factors — Foretell prices the matchup before the books finish updating their numbers.</p>
+        <div class="example"><b>You ask:</b><br>"Who wins India vs Australia in the T20 series opener?"</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRUST GRID ============ -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-eyebrow">Why we earn the trust</div>
+    <h2 class="section-title">Forecasts that <em>stand up to scrutiny.</em></h2>
+    <p class="section-sub">Foretell isn't a tipster. It isn't a hype channel. It isn't a black box pretending to be smart. It's an analysis agent designed to be checked.</p>
+
+    <div class="trust-grid">
+      <div class="trust-cell">
+        <span class="trust-num">01</span>
+        <h3>Every claim cites a source.</h3>
+        <p>Every signal the agent uses links back to the filing, article, or dataset it came from. Click through, verify, disagree. The chain is the product.</p>
+      </div>
+      <div class="trust-cell">
+        <span class="trust-num">02</span>
+        <h3>The track record is public.</h3>
+        <p>Every forecast Foretell makes is timestamped and logged. We don't delete the misses. You can audit the agent's hit rate by domain, horizon, and confidence band.</p>
+      </div>
+      <div class="trust-cell">
+        <span class="trust-num">03</span>
+        <h3>Confidence is calibrated.</h3>
+        <p>A 70% confidence call means roughly seven out of ten calls at that confidence resolve in the predicted direction. We measure ourselves against that, publicly.</p>
+      </div>
+      <div class="trust-cell">
+        <span class="trust-num">04</span>
+        <h3>We update when reality does.</h3>
+        <p>New filing drops at 9.04pm? The forecast moves by 9.05pm. You'll see exactly which signal flipped the call. No stale verdicts, no overnight gaps.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TESTIMONIALS ============ -->
+<section class="section" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-eyebrow">From the early users</div>
+    <h2 class="section-title">What people <em>actually say.</em></h2>
+
+    <div class="testimonials">
+      <div class="tcard">
+        <div class="stars">★★★★★</div>
+        <blockquote>"The thing that won me over wasn't the verdict — it was the <em>sources</em>. I clicked through five of them on a Reliance forecast last week and the agent had found two filings I'd missed."</blockquote>
+        <div class="tperson">
+          <div class="tavatar">A</div>
+          <div>
+            <div class="tname">Aditya R.</div>
+            <div class="tmeta">Independent analyst · Bengaluru · 4 months in</div>
+          </div>
+        </div>
+      </div>
+      <div class="tcard">
+        <div class="stars">★★★★★</div>
+        <blockquote>"I cover state elections for a living. Foretell isn't going to replace ground reporting — but it caught a polling shift in <em>Karnataka</em> two days before my own desk did."</blockquote>
+        <div class="tperson">
+          <div class="tavatar">S</div>
+          <div>
+            <div class="tname">Sneha K.</div>
+            <div class="tmeta">Political journalist · Mumbai · 3 months in</div>
+          </div>
+        </div>
+      </div>
+      <div class="tcard">
+        <div class="stars">★★★★★</div>
+        <blockquote>"Used to spend Sunday mornings reading injury reports across six teams. Foretell does that in 11 seconds and shows me what it weighted. <em>Got my Sundays back.</em>"</blockquote>
+        <div class="tperson">
+          <div class="tavatar">D</div>
+          <div>
+            <div class="tname">Daniel M.</div>
+            <div class="tmeta">Fantasy league regular · London · 5 months in</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ PRICING ============ -->
+<section class="section" id="pricing" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-eyebrow">Pricing</div>
+    <h2 class="section-title">One plan. <em>Seven days free.</em></h2>
+    <p class="section-sub">No tiered upsells, no "Pro+ Elite". You either get the agent or you don't. Start free. Cancel in one click, any day.</p>
+
+    <div class="pricing-wrap">
+      <div class="plan featured">
+        <div class="plan-badge">Recommended</div>
+        <div class="plan-name">Foretell · Monthly</div>
+        <div class="plan-price"><em>$19</em><small>/mo</small></div>
+        <div class="plan-tag">First 7 days free. No card required to start.</div>
+        <ul>
+          <li>Unlimited forecasts across all three domains</li>
+          <li>Full source chain on every call</li>
+          <li>Real-time updates when new signals land</li>
+          <li>Personal track record dashboard</li>
+          <li>Email + push alerts on watched outcomes</li>
+          <li>Cancel anytime in one click</li>
+        </ul>
+        <a href="/signup" class="btn btn-primary">Start free trial</a>
+      </div>
+      <div class="plan">
+        <div class="plan-name">Foretell · Annual</div>
+        <div class="plan-price"><em>$159</em><small>/yr</small></div>
+        <div class="plan-tag">Two months free. Same 7-day trial up front.</div>
+        <ul>
+          <li>Everything in Monthly</li>
+          <li>Priority forecast queue</li>
+          <li>Custom watchlists across all domains</li>
+          <li>API access for personal use</li>
+          <li>Direct line to the founders</li>
+          <li>Locked-in price for life</li>
+        </ul>
+        <a href="/signup" class="btn btn-outline">Choose annual</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FAQ ============ -->
+<section class="section" id="faq" style="padding-top:0">
+  <div class="wrap">
+    <div class="section-eyebrow">Questions, answered honestly</div>
+    <h2 class="section-title">The doubts <em>worth raising.</em></h2>
+
+    <div class="faq">
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>Is this financial advice?</span>
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">No. Foretell is a research tool. It synthesises public information and shows you a probabilistic view. It is not a registered financial advisor, broker, or fiduciary. Every decision you make using its output is yours.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>How accurate is the agent?</span>
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Accuracy depends on the domain and the horizon. Our public track record breaks this down by category and confidence band — when the agent says 70%, we measure whether 70% of those calls resolve as predicted. We publish hits and misses both, with no editing after the fact.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>What data does Foretell read?</span>
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">For markets: SEC filings, earnings releases, news wires (Reuters, Bloomberg, FT), analyst notes, and price/volume data. For politics: official campaign filings, election commission data, major polls, news coverage, and prediction-market lines. For sport: official stat providers, lineup feeds, injury reports, and historical match data. We only use sources we can cite.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>Why not just use ChatGPT?</span>
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Because ChatGPT will happily make up a forecast without telling you it doesn't have the data. Foretell is built around live source connections, calibrated probabilities, and refusal-when-uncertain. Different tool, different job.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>Can I cancel mid-trial?</span>
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">Yes. The free trial doesn't ask for a card to start. Even if you upgrade later, cancellation is one click in your account — no email loops, no retention calls.</div></div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q">
+          <span>Is Foretell a betting site?</span>
+          <span class="plus">+</span>
+        </button>
+        <div class="faq-a"><div class="faq-a-inner">No. Foretell is an analysis tool only. You cannot place wagers, deposit money, or transact on outcomes through Foretell. We forecast — what you do with that forecast is your decision and your responsibility.</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FINAL CTA ============ -->
+<section class="final-cta">
+  <div class="wrap">
+    <h2>The future is just <em>information you don't have yet.</em></h2>
+    <p>Start a 7-day trial. Ask Foretell anything with an outcome. See the work. Decide for yourself.</p>
+    <div class="hero-actions">
+      <a href="/signup" class="btn btn-primary btn-lg">Start free trial →</a>
+      <a href="#how" class="btn btn-outline btn-lg">See a live forecast</a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <a href="/" class="logo">
+          <span class="logo-mark"></span>
+          Foretell
+        </a>
+        <p>The AI analysis agent that reads the news, watches the markets, and shows you what's likely next. With sources. Always.</p>
+      </div>
+      <div class="foot-col">
+        <h5>Product</h5>
+        <ul>
+          <li><a href="#how">How it thinks</a></li>
+          <li><a href="#usecases">What it analyses</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+          <li><a href="#">Track record</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Company</h5>
+        <ul>
+          <li><a href="#">About</a></li>
+          <li><a href="#">Blog</a></li>
+          <li><a href="#">Careers</a></li>
+          <li><a href="#">Contact</a></li>
+        </ul>
+      </div>
+      <div class="foot-col">
+        <h5>Legal</h5>
+        <ul>
+          <li><a href="#">Terms of Service</a></li>
+          <li><a href="#">Privacy Policy</a></li>
+          <li><a href="#">Refund Policy</a></li>
+          <li><a href="#">Responsible use</a></li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="disclaimer">
+      <strong>Important — please read</strong>
+      Foretell is an informational analysis tool only. It is not a financial advisor, broker, registered investment service, betting operator, or gambling platform. You cannot deposit, withdraw, or wager money through Foretell. Forecasts produced by Foretell are probabilistic estimates based on public data and should not be relied upon as the sole basis for financial, political, or sporting decisions. Past forecasting accuracy does not guarantee future accuracy. Use at your own discretion. Where local law restricts the discussion of sporting outcomes or political predictions, Foretell may be unavailable.
+    </div>
+
+    <div class="copy">
+      <div>© 2026 Foretell. All rights reserved.</div>
+      <div>Made with patience for people who want the work shown.</div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // FAQ accordion
+  document.querySelectorAll('.faq-q').forEach(q => {
+    q.addEventListener('click', () => {
+      const item = q.parentElement;
+      const wasOpen = item.classList.contains('open');
+      document.querySelectorAll('.faq-item').forEach(i => i.classList.remove('open'));
+      if(!wasOpen) item.classList.add('open');
+    });
+  });
+
+  // Agent thinking text cycle
+  const thinker = document.getElementById('thinker');
+  const phrases = [
+    'Reading 14 sources',
+    'Weighing Q1 delivery miss',
+    'Cross-checking China data',
+    'Calibrating confidence',
+    'Forming a view'
+  ];
+  let idx = 0;
+  setInterval(() => {
+    idx = (idx + 1) % phrases.length;
+    thinker.innerHTML = phrases[idx] + '<span class="cursor"></span>';
+  }, 1800);
+</script>
+
+</body>
+</html>

@@ -13,10 +13,11 @@ reasoning over simplicity.
 - `agent/`            Core agent code. Orchestrator, selector, tracer, tools.
 - `agent/prompts/`    All LLM prompts as .md files. Never inline prompts in code.
 - `agent/tools/`      One file per external tool. No tool logic outside these files.
-- `state/`            Runtime state. Category rotation + topic cooldown. Git-ignored.
+- `state/`            Runtime state. Category rotation, topic cooldown, `users.db`. Git-ignored.
 - `output/`           Agent output cards. Git-ignored.
 - `traces/`           OTel trace files. Kept locally for Discovery Agent ingestion.
-- `ui/`               Single HTML file feed UI. No framework.
+- `ui/`               Landing, auth pages, and feed UI (static HTML).
+- `web/`              FastAPI app: signup/login (SQLite), protected `/api/feed`.
 - `test_run.py`       Manual trigger with topic/category override.
 - `reanalysis_run.py` Trigger re-analysis for a past card.
 - `scorecard.py`      Nightly prediction accuracy checker.

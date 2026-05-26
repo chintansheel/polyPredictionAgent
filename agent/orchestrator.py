@@ -1981,10 +1981,14 @@ def run_agent(
     parent_run_id: Optional[str] = None,
     run_id: Optional[str] = None,
     retries_used: int = 0,
+    output_ctx: Optional[writer_module.OutputContext] = None,
 ) -> dict:
     """Run the full 4-layer agent and persist a card. Returns the card."""
     run_id = run_id or _build_run_id()
-    tracer = RunTracer(run_id=run_id, traces_dir=os.getenv("TRACES_DIR", "traces"))
+    tracer = RunTracer(
+        run_id=run_id,
+        traces_dir=writer_module.traces_dir_for(output_ctx),
+    )
     root = tracer.root_span()
     root.set("run.market_question", selected.market.get("question"))
     root.set("run.market_category", selected.category)
@@ -2031,7 +2035,7 @@ def run_agent(
     market_summary["selection_reason"] = selected.reason
     market_summary["selection_category"] = selected.category
 
-    run_number = writer_module.next_run_number()
+    run_number = writer_module.next_run_number(output_ctx)
 
     prior_summary: Optional[dict] = None
     analysis_number = 1
@@ -2068,6 +2072,9 @@ def run_agent(
         status=status,
         failed_at_layer=failed_at_layer,
         failure_reason=failure_reason,
+        requested_by_user_id=(
+            output_ctx.user_id if output_ctx is not None else None
+        ),
     )
 
     # finalise root span with summary attributes
@@ -2133,16 +2140,16 @@ def run_agent(
         pass
     root.set("run.duration_seconds", round(duration, 2))
 
-    writer_module.append_card(card)
+    writer_module.append_card(card, output_ctx)
 
     # P2-6: mirror the key health-check booleans onto the root span. Doing
     # this BEFORE we close the root span and write the trace makes a trace
     # file self-contained for diagnosis (no cross-reference to
     # run_health.json needed).
     try:
-        health = writer_module.compute_run_health(card, tracer)
+        health = writer_module.compute_run_health(card, tracer, output_ctx)
         _mirror_health_onto_root(root, health)
-        writer_module.write_run_health(health)
+        writer_module.write_run_health(health, output_ctx)
     except Exception as exc:  # noqa: BLE001
         print(f"warning: run-health report failed: {exc}")
 
@@ -2220,6 +2227,7 @@ def run_once(
     keyword_filter: Optional[str] = None,
     market_id_override: Optional[str] = None,
     force: bool = False,
+    output_ctx: Optional[writer_module.OutputContext] = None,
 ) -> Optional[dict]:
     """Pick a market via the selector, then run the fresh agent. Includes
     the spec's retry loop: if news verification (as decided by the model)
@@ -2244,7 +2252,9 @@ def run_once(
             # selector handed us the same market again — bail to avoid loop
             break
 
-        card = run_agent(selected, mode="fresh", retries_used=attempt)
+        card = run_agent(
+            selected, mode="fresh", retries_used=attempt, output_ctx=output_ctx
+        )
         # Layer 1 news-verification retry rule: only fresh runs, only when
         # the agent itself flagged news_verified=False AND a retry budget
         # remains AND we're in default scheduled flow (no overrides).
@@ -2263,23 +2273,35 @@ def run_once(
     return None
 
 
-def run_reanalysis_for_run_id(run_id: str) -> Optional[dict]:
-    prior = writer_module.get_card_by_run_id(run_id)
+def run_reanalysis_for_run_id(
+    run_id: str,
+    *,
+    output_ctx: Optional[writer_module.OutputContext] = None,
+) -> Optional[dict]:
+    prior = writer_module.get_card_by_run_id(run_id, output_ctx)
     if not prior:
         print(f"No card found for run_id={run_id}")
         return None
-    return _reanalyse(prior)
+    return _reanalyse(prior, output_ctx=output_ctx)
 
 
-def run_reanalysis_for_market(market_id: str) -> Optional[dict]:
-    prior = writer_module.most_recent_card_for_market(market_id)
+def run_reanalysis_for_market(
+    market_id: str,
+    *,
+    output_ctx: Optional[writer_module.OutputContext] = None,
+) -> Optional[dict]:
+    prior = writer_module.most_recent_card_for_market(market_id, output_ctx)
     if not prior:
         print(f"No prior card for market_id={market_id}")
         return None
-    return _reanalyse(prior)
+    return _reanalyse(prior, output_ctx=output_ctx)
 
 
-def _reanalyse(prior_card: dict) -> Optional[dict]:
+def _reanalyse(
+    prior_card: dict,
+    *,
+    output_ctx: Optional[writer_module.OutputContext] = None,
+) -> Optional[dict]:
     market_id = (prior_card.get("market") or {}).get("id")
     if not market_id:
         print("Prior card has no market id; cannot re-analyse.")
@@ -2301,4 +2323,5 @@ def _reanalyse(prior_card: dict) -> Optional[dict]:
         mode="reanalysis",
         prior_card=prior_card,
         parent_run_id=prior_card.get("id"),
+        output_ctx=output_ctx,
     )

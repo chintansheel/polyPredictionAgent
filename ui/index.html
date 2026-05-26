@@ -3,27 +3,12 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Polymarket Research Agent — Feed</title>
+<title>Foretell — Feed</title>
+<link rel="stylesheet" href="/ui/theme.css" />
 <style>
-  :root {
-    color-scheme: dark;
-    --bg: #0b0d10;
-    --panel: #14181d;
-    --panel-2: #1a2027;
-    --border: #232a33;
-    --text: #e7ecf3;
-    --muted: #8a96a4;
-    --accent: #6ea8ff;
-    --good: #5dd39e;
-    --bad: #ff7676;
-    --warn: #ffb454;
-    --fair: #b8a4ff;
-  }
   * { box-sizing: border-box; }
   body {
     margin: 0;
-    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text",
-      "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
     background: var(--bg);
     color: var(--text);
     line-height: 1.55;
@@ -36,13 +21,48 @@
   header h1 {
     margin: 0 0 4px;
     font-size: 24px;
-    letter-spacing: -0.01em;
   }
   header p {
     margin: 0;
     color: var(--muted);
     font-size: 14px;
   }
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+  .user-bar {
+    font-size: 13px;
+    color: var(--muted);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    flex-shrink: 0;
+  }
+  .user-bar button {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    border-radius: 8px;
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: 13px;
+  }
+  .user-bar button:hover { border-color: var(--accent); }
+  .user-bar a.cta {
+    background: var(--accent);
+    color: #0b0d10;
+    border-color: var(--accent);
+    font-weight: 600;
+    text-decoration: none;
+    border-radius: 8px;
+    padding: 6px 12px;
+    font-size: 13px;
+  }
+  .user-bar a.cta:hover { opacity: 0.9; }
   .stats {
     display: flex;
     flex-wrap: wrap;
@@ -80,30 +100,8 @@
   .card-head .question {
     font-size: 17px;
     font-weight: 600;
-    letter-spacing: -0.01em;
     margin: 0 0 6px;
   }
-  .card-head .meta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .pill {
-    background: var(--panel-2);
-    border: 1px solid var(--border);
-    border-radius: 999px;
-    padding: 2px 10px;
-    font-size: 12px;
-    color: var(--muted);
-  }
-  .pill.verdict-underpriced { color: var(--good); border-color: rgba(93,211,158,0.35); }
-  .pill.verdict-overpriced  { color: var(--bad);  border-color: rgba(255,118,118,0.35); }
-  .pill.verdict-fair        { color: var(--fair); border-color: rgba(184,164,255,0.35); }
-  .pill.status-failed       { color: var(--bad);  border-color: rgba(255,118,118,0.35); }
-  .pill.mode-reanalysis     { color: var(--warn); border-color: rgba(255,180,84,0.35); }
-
   .card-body {
     padding: 16px 20px 20px;
     display: grid;
@@ -119,7 +117,7 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
-    font-weight: 600;
+    font-weight: 500;
   }
   .plain-english {
     font-size: 15px;
@@ -135,7 +133,6 @@
   .sub-pred .value {
     font-size: 22px;
     font-weight: 600;
-    letter-spacing: -0.01em;
     display: flex;
     gap: 12px;
     align-items: baseline;
@@ -223,11 +220,21 @@
     color: var(--warn);
   }
 </style>
+<script src="/ui/feed-render.js"></script>
 </head>
 <body>
 <header>
-  <h1>Polymarket Research Agent — Feed</h1>
-  <p>Every 2 hours the agent picks a market, investigates it across four reasoning layers, and publishes a verdict.</p>
+  <div class="header-row">
+    <div>
+      <h1>Foretell — Feed</h1>
+      <p>Your analysis history — run a new investigation anytime from New analysis.</p>
+    </div>
+    <div class="user-bar" id="user-bar" hidden>
+      <a href="/app/run" class="cta">New analysis</a>
+      <span id="user-name"></span>
+      <button type="button" id="sign-out">Sign out</button>
+    </div>
+  </div>
 </header>
 <div class="stats" id="stats"></div>
 <main id="feed">
@@ -235,46 +242,47 @@
 </main>
 
 <script>
+async function requireAuth() {
+  const res = await fetch('/api/auth/me', { credentials: 'include' });
+  if (!res.ok) {
+    window.location.href = '/login';
+    return null;
+  }
+  const user = await res.json();
+  document.getElementById('user-name').textContent = user.name;
+  document.getElementById('user-bar').hidden = false;
+  return user;
+}
+
+document.getElementById('sign-out').addEventListener('click', async () => {
+  await fetch('/api/auth/logout', { method: 'POST', credentials: 'include' });
+  window.location.href = '/';
+});
+
 async function loadFeed() {
+  const user = await requireAuth();
+  if (!user) return;
   try {
-    const res = await fetch('../output/feed.json', { cache: 'no-store' });
+    const res = await fetch('/api/feed', { cache: 'no-store', credentials: 'include' });
     if (!res.ok) throw new Error('feed not found');
     const feed = await res.json();
     render(feed.slice().reverse());
   } catch (err) {
     document.getElementById('feed').innerHTML =
-      '<div class="empty">No feed yet. Run <code>python test_run.py</code> first.</div>';
+      '<div class="empty">No analyses yet. <a href="/app/run">Start your first analysis</a>.</div>';
   }
   try {
-    const sres = await fetch('../output/scorecard.json', { cache: 'no-store' });
-    if (sres.ok) renderStats(await sres.json());
+    const sres = await fetch('/api/scorecard', { cache: 'no-store', credentials: 'include' });
+    if (sres.ok) {
+      document.getElementById('stats').innerHTML = renderStats(await sres.json());
+    }
   } catch (_e) { /* scorecard optional */ }
-}
-
-function fmtPct(n) {
-  if (n == null || isNaN(n)) return '—';
-  return Math.round(n * 100) + '%';
-}
-function safe(v) {
-  if (v == null) return '';
-  return String(v).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
-}
-
-function renderStats(scorecard) {
-  const sp = scorecard.sub_predictions || {};
-  const mv = scorecard.market_verdicts || {};
-  document.getElementById('stats').innerHTML = `
-    <div class="stat">Total runs: <strong>${sp.total || 0}</strong></div>
-    <div class="stat">Sub-predictions resolved: <strong>${sp.resolved || 0}</strong></div>
-    <div class="stat">Sub-prediction accuracy: <strong>${fmtPct(sp.accuracy)}</strong></div>
-    <div class="stat">Verdict accuracy: <strong>${fmtPct(mv.accuracy)}</strong></div>
-  `;
 }
 
 function render(feed) {
   if (!feed.length) {
     document.getElementById('feed').innerHTML =
-      '<div class="empty">No cards yet.</div>';
+      '<div class="empty">No analyses yet. <a href="/app/run">Start your first analysis</a>.</div>';
     return;
   }
   const root = document.getElementById('feed');
@@ -282,96 +290,6 @@ function render(feed) {
   for (const card of feed) {
     root.appendChild(renderCard(card));
   }
-}
-
-function renderCard(card) {
-  const m = card.market || {};
-  const a = card.analysis || {};
-  const sub = card.sub_prediction || {};
-  const v = card.verdict || {};
-  const meta = card.meta || {};
-  const layer3 = card.layer3 || {};
-  const mode = card.mode || 'fresh';
-
-  const el = document.createElement('div');
-  el.className = 'card';
-
-  const verdictClass = `verdict-${(v.call || 'fair')}`;
-  const statusClass = card.status === 'failed' ? 'status-failed' : '';
-
-  const components = layer3.components_researched || {};
-  const compHtml = Object.keys(components).map(name => {
-    const c = components[name];
-    return `<div class="component">
-      <div class="name">${safe(name)} <span class="dir-${safe(c.direction || 'neutral')}">${safe(c.direction || '')}</span></div>
-      <div>${safe(c.finding || '')}</div>
-      ${c.source ? `<div style="margin-top:4px"><a href="${safe(c.source)}" target="_blank" rel="noopener">source</a></div>` : ''}
-    </div>`;
-  }).join('');
-
-  const basisHtml = (sub.basis || []).map(b => `<li>${safe(b)}</li>`).join('');
-
-  let changesHtml = '';
-  if (mode === 'reanalysis' && card.changes_since_prior) {
-    const cs = card.changes_since_prior;
-    const newDev = (cs.new_developments || []).map(d => `<li>${safe(d)}</li>`).join('');
-    changesHtml = `<div class="changes">
-      <h4>Changes since prior analysis</h4>
-      <div>Probability delta: <strong>${safe(cs.probability_delta)}</strong></div>
-      ${cs.prior_prediction_event_resolved !== undefined ? `<div>Prior event resolved: <strong>${cs.prior_prediction_event_resolved}</strong></div>` : ''}
-      ${newDev ? `<ul>${newDev}</ul>` : ''}
-    </div>`;
-  }
-
-  el.innerHTML = `
-    <div class="card-head">
-      <p class="question">${safe(m.question)}</p>
-      <div class="meta-row">
-        <span class="pill verdict ${verdictClass}">${safe(v.call || 'pending')}</span>
-        ${statusClass ? `<span class="pill ${statusClass}">${safe(card.status)}</span>` : ''}
-        ${mode === 'reanalysis' ? `<span class="pill mode-reanalysis">re-analysis #${card.analysis_number || ''}</span>` : ''}
-        <span class="pill">prob ${fmtPct(m.probability_now)}</span>
-        <span class="pill">vol 24h $${Math.round(m.volume_24hr || 0).toLocaleString()}</span>
-        <span class="pill">${safe(m.category || '')}</span>
-        ${m.polymarket_url ? `<a class="pill" href="${safe(m.polymarket_url)}" target="_blank" rel="noopener">polymarket ↗</a>` : ''}
-        <span class="pill">${safe(card.timestamp)}</span>
-      </div>
-    </div>
-    <div class="card-body">
-      <div>
-        <h3 class="section">Plain English</h3>
-        <p class="plain-english">${safe(a.plain_english || '')}</p>
-        ${a.key_event ? `<div style="margin-bottom:14px; font-size:13px; color:var(--muted)"><strong style="color:var(--text)">Key event:</strong> ${safe(a.key_event)}</div>` : ''}
-
-        <div class="sub-pred">
-          <h3 class="section">Sub-prediction</h3>
-          <div class="value">${safe(sub.predicted_value || '—')} <span class="range">${safe(sub.predicted_range || '')}</span></div>
-          <div class="conf-bar"><span style="width:${Math.round((sub.confidence || 0) * 100)}%"></span></div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px">confidence ${fmtPct(sub.confidence)}</div>
-          ${basisHtml ? `<ul>${basisHtml}</ul>` : ''}
-          ${sub.invalidation_condition ? `<div class="invalidation"><strong>Invalidation:</strong> ${safe(sub.invalidation_condition)}</div>` : ''}
-          ${sub.actual_value ? `<div style="margin-top:8px;font-size:13px"><strong>Actual:</strong> ${safe(sub.actual_value)} — ${sub.prediction_correct ? 'correct' : 'incorrect'}</div>` : ''}
-        </div>
-
-        <div class="verdict">
-          <div class="call">Verdict: ${safe(v.call || '—')} (${fmtPct(v.confidence)})</div>
-          <div>${safe(v.reasoning || '')}</div>
-        </div>
-        ${changesHtml}
-      </div>
-      <div>
-        <h3 class="section">Layer 3 components</h3>
-        <div class="components">${compHtml || '<div class="component">No component data.</div>'}</div>
-        ${a.news_url ? `<div style="margin-top:14px;font-size:13px"><strong>News:</strong> <a href="${safe(a.news_url)}" target="_blank" rel="noopener">${safe(a.news_headline || a.news_url)}</a> <span style="color:var(--muted)">(${safe(a.news_source || '')})</span></div>` : ''}
-        <div style="margin-top:14px;font-size:12px;color:var(--muted)">
-          tools: ${(meta.tools_called || []).join(', ') || '—'}<br>
-          tokens: in ${meta.total_input_tokens || 0} / out ${meta.total_output_tokens || 0}<br>
-          turns: ${meta.turns || 0} · duration ${meta.run_duration_seconds || '?'}s
-        </div>
-      </div>
-    </div>
-  `;
-  return el;
 }
 
 loadFeed();

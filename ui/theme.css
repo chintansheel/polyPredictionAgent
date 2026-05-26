@@ -1,0 +1,125 @@
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap');
+
+:root {
+  color-scheme: dark;
+  --bg: #0b0d10;
+  --panel: #14181d;
+  --panel-2: #1a2027;
+  --border: #232a33;
+  --text: #e7ecf3;
+  --muted: #8a96a4;
+  --dim: #6a7580;
+  --accent: #6ea8ff;
+  --good: #5dd39e;
+  --bad: #ff7676;
+  --warn: #ffb454;
+  --fair: #b8a4ff;
+  --serif: 'Instrument Serif', 'Times New Roman', serif;
+  --sans: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --mono: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+body {
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Dashboard typography (feed + run) */
+header h1,
+.panel h2,
+#result-section > div > h2 {
+  font-family: var(--serif);
+  letter-spacing: -0.01em;
+}
+
+.card-head .question {
+  font-family: var(--serif);
+  letter-spacing: -0.01em;
+}
+
+.sub-pred .value {
+  font-family: var(--serif);
+  letter-spacing: -0.01em;
+}
+
+h3.section,
+.component .name,
+.changes h4,
+.run-section-label {
+  font-family: var(--mono);
+}
+
+/* Feed card meta pills */
+.card-head .meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.card-head .meta-row .pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  white-space: nowrap;
+  font-family: var(--sans);
+  font-size: 12px;
+  font-weight: 500;
+  line-height: 1.2;
+  letter-spacing: 0;
+  padding: 5px 11px;
+  border-radius: 999px;
+  background: var(--panel-2);
+  border: 1px solid var(--border);
+  color: var(--muted);
+}
+
+.card-head .meta-row a.pill {
+  text-decoration: none;
+  color: var(--muted);
+}
+
+.card-head .meta-row a.pill:hover {
+  color: var(--accent);
+  border-color: rgba(110, 168, 255, 0.45);
+}
+
+.pill.pill-timestamp {
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 400;
+  color: var(--dim);
+}
+
+.pill.verdict-pending {
+  color: var(--muted);
+  border-style: dashed;
+}
+
+.pill.verdict-underpriced {
+  color: var(--good);
+  border-color: rgba(93, 211, 158, 0.35);
+}
+
+.pill.verdict-overpriced {
+  color: var(--bad);
+  border-color: rgba(255, 118, 118, 0.35);
+}
+
+.pill.verdict-fair {
+  color: var(--fair);
+  border-color: rgba(184, 164, 255, 0.35);
+}
+
+.pill.status-failed {
+  color: var(--bad);
+  border-color: rgba(255, 118, 118, 0.35);
+  background: rgba(255, 118, 118, 0.08);
+}
+
+.pill.mode-reanalysis {
+  color: var(--warn);
+  border-color: rgba(255, 180, 84, 0.35);
+}
