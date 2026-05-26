@@ -166,8 +166,13 @@ MAX_TURNS_LAYER4 = int(os.getenv("MAX_TURNS_LAYER4", "2"))
 #
 # LLM_429_RETRY_MAX = total HTTP attempts per single `messages.create` call
 # (not "extra" retries). Capped to avoid runaway loops if .env is wrong.
-LLM_429_RETRY_MAX = max(1, min(int(os.getenv("LLM_429_RETRY_MAX", "6")), 2))
-LLM_429_RETRY_WAIT_SECONDS = float(os.getenv("LLM_429_RETRY_WAIT_SECONDS", "60"))
+LLM_429_RETRY_MAX = max(1, min(int(os.getenv("LLM_429_RETRY_MAX", "6")), 20))
+# When the API omits Retry-After on 429: Anthropic low-TPM tiers often need
+# a longer pause; OpenAI accounts usually recover faster — shorter default.
+_llm_429_wait_default = "20" if _llm_provider() == "openai" else "60"
+LLM_429_RETRY_WAIT_SECONDS = float(
+    os.getenv("LLM_429_RETRY_WAIT_SECONDS", _llm_429_wait_default)
+)
 LLM_INTER_TURN_SECONDS = float(os.getenv("LLM_INTER_TURN_SECONDS", "0"))
 # Enforced after each successful call and after each 429 wait (spreads TPM).
 LLM_MIN_SECONDS_BETWEEN_API = float(os.getenv("LLM_MIN_SECONDS_BETWEEN_API", "0"))

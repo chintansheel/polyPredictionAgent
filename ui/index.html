@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Polymarket Research Agent — Feed</title>
+<title>Polymarket Research Agent</title>
 <style>
   :root {
     color-scheme: dark;
@@ -29,44 +29,94 @@
     line-height: 1.55;
   }
   header {
-    padding: 32px 24px 16px;
-    max-width: 980px;
+    padding: 28px 24px 12px;
+    max-width: 1040px;
     margin: 0 auto;
   }
-  header h1 {
-    margin: 0 0 4px;
-    font-size: 24px;
-    letter-spacing: -0.01em;
+  header h1 { margin: 0 0 6px; font-size: 22px; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--muted); font-size: 14px; max-width: 720px; }
+
+  .run-panel {
+    max-width: 1040px;
+    margin: 0 auto;
+    padding: 0 24px 16px;
   }
-  header p {
-    margin: 0;
-    color: var(--muted);
-    font-size: 14px;
-  }
-  .stats {
-    display: flex;
-    flex-wrap: wrap;
+  .run-box {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 18px;
+    display: grid;
     gap: 12px;
-    padding: 16px 24px;
-    max-width: 980px;
+  }
+  .run-box label { font-size: 12px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--muted); font-weight: 600; }
+  .run-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: stretch; }
+  .run-row input {
+    flex: 1 1 280px;
+    min-width: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px 14px;
+    color: var(--text);
+    font-size: 15px;
+  }
+  .run-row input::placeholder { color: var(--muted); opacity: 0.85; }
+  .run-row button {
+    flex: 0 0 auto;
+    background: var(--accent);
+    color: #0b0d10;
+    border: none;
+    border-radius: 10px;
+    padding: 12px 22px;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+  }
+  .run-row button:disabled { opacity: 0.45; cursor: not-allowed; }
+  .hint { font-size: 13px; color: var(--muted); margin: 0; }
+  .err { color: var(--bad); font-size: 14px; margin: 0; }
+  .stats {
+    display: flex; flex-wrap: wrap; gap: 10px;
+    padding: 8px 24px 0;
+    max-width: 1040px;
     margin: 0 auto;
   }
   .stat {
     background: var(--panel);
     border: 1px solid var(--border);
-    border-radius: 12px;
-    padding: 10px 14px;
-    font-size: 13px;
+    border-radius: 10px;
+    padding: 8px 12px;
+    font-size: 12px;
     color: var(--muted);
   }
   .stat strong { color: var(--text); font-weight: 600; }
-  main {
-    max-width: 980px;
-    margin: 0 auto;
-    padding: 12px 24px 64px;
-    display: grid;
-    gap: 18px;
+
+  .tabs-wrap { max-width: 1040px; margin: 0 auto; padding: 16px 24px 48px; }
+  .tabs {
+    display: flex; gap: 6px; flex-wrap: wrap;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 16px;
   }
+  .tabs button {
+    background: transparent;
+    border: none;
+    color: var(--muted);
+    padding: 10px 16px;
+    font-size: 14px;
+    cursor: pointer;
+    border-radius: 10px 10px 0 0;
+    margin-bottom: -1px;
+  }
+  .tabs button.active {
+    color: var(--text);
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-bottom-color: var(--panel);
+  }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
   .card {
     background: var(--panel);
     border: 1px solid var(--border);
@@ -77,19 +127,8 @@
     padding: 18px 20px 12px;
     border-bottom: 1px solid var(--border);
   }
-  .card-head .question {
-    font-size: 17px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    margin: 0 0 6px;
-  }
-  .card-head .meta-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 10px;
-    font-size: 12px;
-    color: var(--muted);
-  }
+  .card-head .question { font-size: 17px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.01em; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 8px; font-size: 12px; color: var(--muted); }
   .pill {
     background: var(--panel-2);
     border: 1px solid var(--border);
@@ -104,49 +143,29 @@
   .pill.status-failed       { color: var(--bad);  border-color: rgba(255,118,118,0.35); }
   .pill.mode-reanalysis     { color: var(--warn); border-color: rgba(255,180,84,0.35); }
 
-  .card-body {
-    padding: 16px 20px 20px;
-    display: grid;
-    grid-template-columns: 1.4fr 1fr;
-    gap: 22px;
-  }
-  @media (max-width: 720px) {
-    .card-body { grid-template-columns: 1fr; }
+  .card-body { padding: 16px 20px 22px; display: grid; gap: 20px; }
+  @media (min-width: 860px) {
+    .card-body.cols-2 { grid-template-columns: 1.25fr 1fr; }
   }
   h3.section {
-    margin: 0 0 6px;
+    margin: 0 0 8px;
     font-size: 12px;
     text-transform: uppercase;
     letter-spacing: 0.08em;
     color: var(--muted);
     font-weight: 600;
   }
-  .plain-english {
-    font-size: 15px;
-    margin: 0 0 14px;
-  }
+  .plain-english { font-size: 15px; margin: 0 0 12px; }
   .sub-pred {
     background: var(--panel-2);
     border: 1px solid var(--border);
     border-radius: 10px;
     padding: 12px 14px;
-    margin-bottom: 14px;
+    margin-bottom: 12px;
   }
-  .sub-pred .value {
-    font-size: 22px;
-    font-weight: 600;
-    letter-spacing: -0.01em;
-    display: flex;
-    gap: 12px;
-    align-items: baseline;
-  }
+  .sub-pred .value { font-size: 20px; font-weight: 600; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
   .sub-pred .range { color: var(--muted); font-size: 14px; font-weight: 400; }
-  .sub-pred ul {
-    margin: 8px 0 0;
-    padding-left: 18px;
-    font-size: 13px;
-  }
-  .sub-pred ul li { margin-bottom: 4px; }
+  .sub-pred ul { margin: 8px 0 0; padding-left: 18px; font-size: 13px; }
   .invalidation {
     margin-top: 10px;
     font-size: 13px;
@@ -154,22 +173,9 @@
     border-left: 2px solid var(--warn);
     padding-left: 10px;
   }
-  .conf-bar {
-    height: 6px;
-    border-radius: 999px;
-    background: var(--panel);
-    overflow: hidden;
-    margin-top: 6px;
-  }
-  .conf-bar > span {
-    display: block;
-    height: 100%;
-    background: linear-gradient(90deg, var(--accent), var(--good));
-  }
-  .components {
-    display: grid;
-    gap: 8px;
-  }
+  .conf-bar { height: 6px; border-radius: 999px; background: var(--panel); overflow: hidden; margin-top: 6px; }
+  .conf-bar > span { display: block; height: 100%; background: linear-gradient(90deg, var(--accent), var(--good)); }
+  .components { display: grid; gap: 8px; }
   .component {
     background: var(--panel-2);
     border: 1px solid var(--border);
@@ -182,30 +188,61 @@
     letter-spacing: 0.06em;
     color: var(--muted);
     font-size: 11px;
-    margin-bottom: 2px;
+    margin-bottom: 4px;
   }
-  .dir-up    { color: var(--good); }
-  .dir-down  { color: var(--bad);  }
+  .dir-up { color: var(--good); }
+  .dir-down { color: var(--bad); }
   .dir-neutral { color: var(--muted); }
   .verdict {
-    margin-top: 14px;
+    margin-top: 12px;
     border-top: 1px dashed var(--border);
     padding-top: 12px;
     font-size: 13px;
     color: var(--muted);
   }
-  .verdict .call {
-    font-size: 14px;
-    font-weight: 600;
-    color: var(--text);
-    margin-bottom: 4px;
-  }
+  .verdict .call { font-size: 15px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+  .kv { font-size: 13px; color: var(--muted); margin: 4px 0; }
+  .kv code { color: var(--accent); font-size: 12px; word-break: break-all; }
   a { color: var(--accent); text-decoration: none; }
   a:hover { text-decoration: underline; }
-  .empty {
-    text-align: center;
+  .empty { text-align: center; color: var(--muted); padding: 48px 20px; font-size: 14px; }
+  .json-pre {
+    margin: 0;
+    padding: 16px;
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    font-size: 12px;
+    line-height: 1.45;
+    overflow: auto;
+    max-height: min(70vh, 900px);
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+  .trace-summary {
+    margin-bottom: 14px;
+    font-size: 13px;
     color: var(--muted);
-    padding: 60px 20px;
+  }
+  .trace-list { list-style: none; padding: 0; margin: 0 0 16px; max-height: 220px; overflow: auto; }
+  .trace-list li {
+    padding: 6px 10px;
+    border-bottom: 1px solid var(--border);
+    font-size: 13px;
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+  }
+  .trace-list li span:last-child { color: var(--muted); font-size: 12px; }
+  .feed-mini { margin-top: 28px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .feed-mini h2 { font-size: 14px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; margin: 0 0 10px; }
+  .feed-mini ul { list-style: none; padding: 0; margin: 0; }
+  .feed-mini li { padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+  .feed-mini li button {
+    background: none; border: none; color: var(--accent);
+    cursor: pointer; text-align: left; padding: 0; font-size: inherit;
+    max-width: 100%;
   }
   .changes {
     margin-top: 12px;
@@ -226,30 +263,55 @@
 </head>
 <body>
 <header>
-  <h1>Polymarket Research Agent — Feed</h1>
-  <p>Every 2 hours the agent picks a market, investigates it across four reasoning layers, and publishes a verdict.</p>
+  <h1>Polymarket research agent</h1>
+  <p>Run a full four-layer analysis on any active market: paste a Polymarket event link, or type keywords to search. Results stay on disk like a normal run (feed and traces).</p>
 </header>
+
+<div class="run-panel">
+  <div class="run-box">
+    <label for="q">Keyword or Polymarket URL</label>
+    <div class="run-row">
+      <input id="q" type="text" placeholder='e.g. fed rate cut OR https://polymarket.com/event/...' autocomplete="off" />
+      <button type="button" id="runBtn">Run analysis</button>
+    </div>
+    <p class="hint">Event links must look like <code>https://polymarket.com/event/your-slug</code> (or <code>/market/…</code>).</p>
+    <p class="err" id="runErr" hidden></p>
+  </div>
+</div>
+
 <div class="stats" id="stats"></div>
-<main id="feed">
-  <div class="empty">loading feed…</div>
-</main>
+
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button type="button" class="active" data-tab="analysis">Analysis</button>
+    <button type="button" data-tab="trace">Trace</button>
+    <button type="button" data-tab="json">Card JSON</button>
+  </div>
+
+  <div id="tab-analysis" class="panel active">
+    <div id="analysisRoot"><div class="empty">Run an analysis or open a past run below to see the full write-up here.</div></div>
+    <div class="feed-mini">
+      <h2>Past runs on this machine</h2>
+      <ul id="feedList"></ul>
+    </div>
+  </div>
+
+  <div id="tab-trace" class="panel">
+    <p class="trace-summary" id="traceSummary"></p>
+    <ul class="trace-list" id="traceList"></ul>
+    <h3 class="section">Full trace file (OpenTelemetry JSON)</h3>
+    <pre class="json-pre" id="tracePre">Run an analysis first, then open this tab.</pre>
+  </div>
+
+  <div id="tab-json" class="panel">
+    <pre class="json-pre" id="cardJsonPre">{}</pre>
+  </div>
+</div>
 
 <script>
-async function loadFeed() {
-  try {
-    const res = await fetch('../output/feed.json', { cache: 'no-store' });
-    if (!res.ok) throw new Error('feed not found');
-    const feed = await res.json();
-    render(feed.slice().reverse());
-  } catch (err) {
-    document.getElementById('feed').innerHTML =
-      '<div class="empty">No feed yet. Run <code>python test_run.py</code> first.</div>';
-  }
-  try {
-    const sres = await fetch('../output/scorecard.json', { cache: 'no-store' });
-    if (sres.ok) renderStats(await sres.json());
-  } catch (_e) { /* scorecard optional */ }
-}
+let lastCard = null;
+let lastTrace = null;
+let feedCache = [];
 
 function fmtPct(n) {
   if (n == null || isNaN(n)) return '—';
@@ -260,31 +322,66 @@ function safe(v) {
   return String(v).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
 }
 
-function renderStats(scorecard) {
-  const sp = scorecard.sub_predictions || {};
-  const mv = scorecard.market_verdicts || {};
-  document.getElementById('stats').innerHTML = `
-    <div class="stat">Total runs: <strong>${sp.total || 0}</strong></div>
-    <div class="stat">Sub-predictions resolved: <strong>${sp.resolved || 0}</strong></div>
-    <div class="stat">Sub-prediction accuracy: <strong>${fmtPct(sp.accuracy)}</strong></div>
-    <div class="stat">Verdict accuracy: <strong>${fmtPct(mv.accuracy)}</strong></div>
-  `;
+function setTab(name) {
+  document.querySelectorAll('.tabs button').forEach(b => {
+    b.classList.toggle('active', b.dataset.tab === name);
+  });
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  const map = { analysis: 'tab-analysis', trace: 'tab-trace', json: 'tab-json' };
+  const el = document.getElementById(map[name]);
+  if (el) el.classList.add('active');
 }
 
-function render(feed) {
-  if (!feed.length) {
-    document.getElementById('feed').innerHTML =
-      '<div class="empty">No cards yet.</div>';
+document.querySelectorAll('.tabs button').forEach(btn => {
+  btn.addEventListener('click', () => setTab(btn.dataset.tab));
+});
+
+function attrVal(a) {
+  const v = a && a.value;
+  if (!v) return '';
+  if (v.boolValue !== undefined) return v.boolValue;
+  if (v.intValue !== undefined) return v.intValue;
+  if (v.doubleValue !== undefined) return v.doubleValue;
+  if (v.stringValue !== undefined) return v.stringValue;
+  return '';
+}
+
+function summarizeSpans(trace) {
+  const spans = trace?.resourceSpans?.[0]?.scopeSpans?.[0]?.spans || [];
+  return spans.map(s => {
+    let dur = '';
+    const attrs = s.attributes || [];
+    for (const a of attrs) {
+      if (a.key === 'duration_ms') {
+        dur = String(attrVal(a)) + ' ms';
+        break;
+      }
+    }
+    return { name: s.name || '', dur, status: s.status?.code };
+  });
+}
+
+function renderTracePanels(trace) {
+  const pre = document.getElementById('tracePre');
+  const list = document.getElementById('traceList');
+  const sum = document.getElementById('traceSummary');
+  if (!trace) {
+    pre.textContent = 'No trace was returned for this run.';
+    list.innerHTML = '';
+    sum.textContent = '';
     return;
   }
-  const root = document.getElementById('feed');
-  root.innerHTML = '';
-  for (const card of feed) {
-    root.appendChild(renderCard(card));
-  }
+  pre.textContent = JSON.stringify(trace, null, 2);
+  const rows = summarizeSpans(trace);
+  sum.textContent = rows.length ? `${rows.length} spans in this run.` : 'Empty trace.';
+  list.innerHTML = rows.map(r => `<li><span>${safe(r.name)}</span><span>${safe(r.dur)}</span></li>`).join('');
 }
 
-function renderCard(card) {
+function renderCardInto(root, card) {
+  if (!card) {
+    root.innerHTML = '<div class="empty">No card.</div>';
+    return;
+  }
   const m = card.market || {};
   const a = card.analysis || {};
   const sub = card.sub_prediction || {};
@@ -292,9 +389,6 @@ function renderCard(card) {
   const meta = card.meta || {};
   const layer3 = card.layer3 || {};
   const mode = card.mode || 'fresh';
-
-  const el = document.createElement('div');
-  el.className = 'card';
 
   const verdictClass = `verdict-${(v.call || 'fair')}`;
   const statusClass = card.status === 'failed' ? 'status-failed' : '';
@@ -323,58 +417,185 @@ function renderCard(card) {
     </div>`;
   }
 
-  el.innerHTML = `
-    <div class="card-head">
-      <p class="question">${safe(m.question)}</p>
-      <div class="meta-row">
-        <span class="pill verdict ${verdictClass}">${safe(v.call || 'pending')}</span>
-        ${statusClass ? `<span class="pill ${statusClass}">${safe(card.status)}</span>` : ''}
-        ${mode === 'reanalysis' ? `<span class="pill mode-reanalysis">re-analysis #${card.analysis_number || ''}</span>` : ''}
-        <span class="pill">prob ${fmtPct(m.probability_now)}</span>
-        <span class="pill">vol 24h $${Math.round(m.volume_24hr || 0).toLocaleString()}</span>
-        <span class="pill">${safe(m.category || '')}</span>
-        ${m.polymarket_url ? `<a class="pill" href="${safe(m.polymarket_url)}" target="_blank" rel="noopener">polymarket ↗</a>` : ''}
-        <span class="pill">${safe(card.timestamp)}</span>
-      </div>
-    </div>
-    <div class="card-body">
-      <div>
-        <h3 class="section">Plain English</h3>
-        <p class="plain-english">${safe(a.plain_english || '')}</p>
-        ${a.key_event ? `<div style="margin-bottom:14px; font-size:13px; color:var(--muted)"><strong style="color:var(--text)">Key event:</strong> ${safe(a.key_event)}</div>` : ''}
+  const failBlock = card.status === 'failed' ? `
+    <div class="sub-pred" style="border-color:rgba(255,118,118,0.4)">
+      <h3 class="section">Run failed</h3>
+      <div class="kv">${safe(card.failure_reason || 'Unknown error')}</div>
+      ${card.failed_at_layer != null ? `<div class="kv">Stopped after layer <strong>${card.failed_at_layer}</strong>.</div>` : ''}
+    </div>` : '';
 
-        <div class="sub-pred">
-          <h3 class="section">Sub-prediction</h3>
-          <div class="value">${safe(sub.predicted_value || '—')} <span class="range">${safe(sub.predicted_range || '')}</span></div>
-          <div class="conf-bar"><span style="width:${Math.round((sub.confidence || 0) * 100)}%"></span></div>
-          <div style="font-size:12px;color:var(--muted);margin-top:4px">confidence ${fmtPct(sub.confidence)}</div>
-          ${basisHtml ? `<ul>${basisHtml}</ul>` : ''}
-          ${sub.invalidation_condition ? `<div class="invalidation"><strong>Invalidation:</strong> ${safe(sub.invalidation_condition)}</div>` : ''}
-          ${sub.actual_value ? `<div style="margin-top:8px;font-size:13px"><strong>Actual:</strong> ${safe(sub.actual_value)} — ${sub.prediction_correct ? 'correct' : 'incorrect'}</div>` : ''}
-        </div>
+  const selection = m.selection_reason ? `<div class="kv"><strong>Why this market:</strong> ${safe(m.selection_reason)}</div>` : '';
+  const selMeta = (m.selection_score != null || m.selection_category)
+    ? `<div class="kv">Selection score: <code>${safe(m.selection_score)}</code> · Category: <code>${safe(m.selection_category || m.category || '')}</code></div>`
+    : '';
 
-        <div class="verdict">
-          <div class="call">Verdict: ${safe(v.call || '—')} (${fmtPct(v.confidence)})</div>
-          <div>${safe(v.reasoning || '')}</div>
+  root.innerHTML = `
+    <div class="card">
+      <div class="card-head">
+        <p class="question">${safe(m.question)}</p>
+        <div class="meta-row">
+          <span class="pill verdict ${verdictClass}">${safe(v.call || 'pending')}</span>
+          ${statusClass ? `<span class="pill ${statusClass}">${safe(card.status)}</span>` : ''}
+          ${mode === 'reanalysis' ? `<span class="pill mode-reanalysis">re-analysis #${card.analysis_number || ''}</span>` : ''}
+          <span class="pill">prob ${fmtPct(m.probability_now)}</span>
+          <span class="pill">vol 24h $${Math.round(m.volume_24hr || 0).toLocaleString()}</span>
+          <span class="pill">${safe(m.category || '')}</span>
+          ${m.polymarket_url ? `<a class="pill" href="${safe(m.polymarket_url)}" target="_blank" rel="noopener">polymarket ↗</a>` : ''}
+          <span class="pill">run <code>${safe(card.id)}</code></span>
+          <span class="pill">${safe(card.timestamp)}</span>
         </div>
-        ${changesHtml}
+        ${selection}
+        ${selMeta}
       </div>
-      <div>
-        <h3 class="section">Layer 3 components</h3>
-        <div class="components">${compHtml || '<div class="component">No component data.</div>'}</div>
-        ${a.news_url ? `<div style="margin-top:14px;font-size:13px"><strong>News:</strong> <a href="${safe(a.news_url)}" target="_blank" rel="noopener">${safe(a.news_headline || a.news_url)}</a> <span style="color:var(--muted)">(${safe(a.news_source || '')})</span></div>` : ''}
-        <div style="margin-top:14px;font-size:12px;color:var(--muted)">
-          tools: ${(meta.tools_called || []).join(', ') || '—'}<br>
-          tokens: in ${meta.total_input_tokens || 0} / out ${meta.total_output_tokens || 0}<br>
-          turns: ${meta.turns || 0} · duration ${meta.run_duration_seconds || '?'}s
+      <div class="card-body cols-2">
+        <div>
+          ${failBlock}
+          <h3 class="section">Plain English</h3>
+          <p class="plain-english">${safe(a.plain_english || '')}</p>
+          ${a.key_event ? `<div class="kv" style="margin-bottom:14px"><strong>Key event:</strong> ${safe(a.key_event)}</div>` : ''}
+
+          <div class="sub-pred">
+            <h3 class="section">Sub-prediction</h3>
+            <div class="value">${safe(sub.predicted_value || '—')} <span class="range">${safe(sub.predicted_range || '')}</span></div>
+            <div class="conf-bar"><span style="width:${Math.round((sub.confidence || 0) * 100)}%"></span></div>
+            <div style="font-size:12px;color:var(--muted);margin-top:4px">confidence ${fmtPct(sub.confidence)}</div>
+            ${basisHtml ? `<ul>${basisHtml}</ul>` : ''}
+            ${sub.invalidation_condition ? `<div class="invalidation"><strong>Invalidation:</strong> ${safe(sub.invalidation_condition)}</div>` : ''}
+            ${sub.actual_value ? `<div style="margin-top:8px;font-size:13px"><strong>Actual:</strong> ${safe(sub.actual_value)} — ${sub.prediction_correct ? 'correct' : 'incorrect'}</div>` : ''}
+          </div>
+
+          <div class="verdict">
+            <div class="call">Verdict: ${safe(v.call || '—')} (${fmtPct(v.confidence)})</div>
+            <div>${safe(v.reasoning || '')}</div>
+          </div>
+          ${v.watch_up ? `<div class="kv" style="margin-top:10px"><strong>Watch up:</strong> ${safe(v.watch_up)}</div>` : ''}
+          ${v.watch_down ? `<div class="kv"><strong>Watch down:</strong> ${safe(v.watch_down)}</div>` : ''}
+          ${changesHtml}
+        </div>
+        <div>
+          <h3 class="section">Layer 3 components</h3>
+          <div class="components">${compHtml || '<div class="component">No component data.</div>'}</div>
+          ${a.news_url ? `<div style="margin-top:14px;font-size:13px"><strong>News:</strong> <a href="${safe(a.news_url)}" target="_blank" rel="noopener">${safe(a.news_headline || a.news_url)}</a> <span style="color:var(--muted)">(${safe(a.news_source || '')})</span></div>` : ''}
+          <div style="margin-top:14px">
+            <h3 class="section">Run metadata</h3>
+            <div class="kv">News verified: <strong>${a.news_verified === true ? 'yes' : a.news_verified === false ? 'no' : '—'}</strong></div>
+            <div class="kv">Tools: ${safe((meta.tools_called || []).join(', ') || '—')}</div>
+            <div class="kv">Tokens — in: ${meta.total_input_tokens || 0} · out: ${meta.total_output_tokens || 0}</div>
+            <div class="kv">Turns: ${meta.turns || 0} · duration: ${meta.run_duration_seconds || '?'}s</div>
+            <div class="kv">Trace id: <code>${safe(meta.trace_id || '')}</code></div>
+            <div class="kv">Run number: ${card.run_number != null ? safe(String(card.run_number)) : '—'}</div>
+          </div>
         </div>
       </div>
-    </div>
-  `;
-  return el;
+    </div>`;
 }
 
-loadFeed();
+async function loadScorecard() {
+  try {
+    const sres = await fetch('/api/scorecard', { cache: 'no-store' });
+    if (!sres.ok) return;
+    const scorecard = await sres.json();
+    const sp = scorecard.sub_predictions || {};
+    const mv = scorecard.market_verdicts || {};
+    document.getElementById('stats').innerHTML = `
+      <div class="stat">Total runs: <strong>${sp.total || 0}</strong></div>
+      <div class="stat">Sub-predictions resolved: <strong>${sp.resolved || 0}</strong></div>
+      <div class="stat">Sub-prediction accuracy: <strong>${fmtPct(sp.accuracy)}</strong></div>
+      <div class="stat">Verdict accuracy: <strong>${fmtPct(mv.accuracy)}</strong></div>
+    `;
+  } catch (_e) { /* optional */ }
+}
+
+async function loadFeedList() {
+  const ul = document.getElementById('feedList');
+  try {
+    const res = await fetch('/api/feed', { cache: 'no-store' });
+    const feed = await res.json();
+    if (!feed.length) {
+      feedCache = [];
+      ul.innerHTML = '<li class="empty" style="padding:0;border:none">No saved runs yet.</li>';
+      return;
+    }
+    feedCache = feed.slice().reverse().slice(0, 12);
+    ul.innerHTML = feedCache.map((c, i) => {
+      const q = (c.market && c.market.question) || c.id || '';
+      const short = q.length > 96 ? q.slice(0, 93) + '…' : q;
+      return `<li><button type="button" data-idx="${i}">${safe(short)}</button></li>`;
+    }).join('');
+    ul.querySelectorAll('button[data-idx]').forEach(btn => {
+      btn.addEventListener('click', async () => {
+        const i = parseInt(btn.getAttribute('data-idx'), 10);
+        const card = feedCache[i];
+        if (!card) return;
+        showCard(card, null);
+        setTab('analysis');
+        const rid = card.id;
+        if (!rid) return;
+        try {
+          const tr = await fetch('/api/trace/' + encodeURIComponent(rid), { cache: 'no-store' });
+          if (tr.ok) {
+            const trace = await tr.json();
+            if (lastCard && lastCard.id === rid) {
+              lastTrace = trace;
+              renderTracePanels(trace);
+            }
+          }
+        } catch (_e) { /* optional */ }
+      });
+    });
+  } catch (_e) {
+    ul.innerHTML = '<li>Could not load feed.</li>';
+  }
+}
+
+function showCard(card, trace) {
+  lastCard = card;
+  lastTrace = trace;
+  renderCardInto(document.getElementById('analysisRoot'), card);
+  document.getElementById('cardJsonPre').textContent = JSON.stringify(card, null, 2);
+  renderTracePanels(trace);
+}
+
+document.getElementById('runBtn').addEventListener('click', async () => {
+  const input = document.getElementById('q');
+  const err = document.getElementById('runErr');
+  const btn = document.getElementById('runBtn');
+  err.hidden = true;
+  const query = input.value.trim();
+  if (!query) {
+    err.textContent = 'Enter a keyword or Polymarket URL.';
+    err.hidden = false;
+    return;
+  }
+  btn.disabled = true;
+  btn.textContent = 'Running…';
+  try {
+    const res = await fetch('/api/run', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ query }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      err.textContent = data.error || 'Run failed.';
+      err.hidden = false;
+      return;
+    }
+    showCard(data.card, data.trace);
+    setTab('analysis');
+    loadFeedList();
+    loadScorecard();
+  } catch (e) {
+    err.textContent = String(e.message || e);
+    err.hidden = false;
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Run analysis';
+  }
+});
+
+loadScorecard();
+loadFeedList();
 </script>
 </body>
 </html>
