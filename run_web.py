@@ -2,9 +2,9 @@
 """Start the Foretell web app (landing, auth, protected feed).
 
 Usage:
-    python run_web.py
+    python3 run_web.py
 
-Do not use `python -m http.server` — that only serves static files and breaks
+Do not use `python -m http.server` - that only serves static files and breaks
 /signup, /login, /app, and the auth API.
 """
 
@@ -12,6 +12,14 @@ from __future__ import annotations
 
 import os
 import sys
+
+if sys.version_info < (3, 10):
+    print(
+        f"Python 3.10+ is required (you are running {sys.version}).\n"
+        "Use: python3 run_web.py",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 from dotenv import load_dotenv
 

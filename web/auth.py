@@ -147,6 +147,7 @@ def login(body: LoginBody, response: Response) -> dict:
     user = db.get_user_by_email(body.email)
     if not user or not verify_password(body.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid email or password")
+    db.update_last_login(user["id"])
     set_session_cookie(response, user["id"])
     return {"name": user["name"], "email": user["email"]}
 

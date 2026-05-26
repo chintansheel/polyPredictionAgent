@@ -32,6 +32,7 @@ cp .env.example .env
 #   EXA_API_KEY=...
 #   ANTHROPIC_MODEL=claude-sonnet-4-6   # must be a real model id from Anthropic docs
 #   AUTH_SECRET=...                     # long random string for session cookies
+#   DATABASE_URL=postgresql://...       # Supabase pooler URI (web app users + agent_jobs)
 
 # 3. Run once (manual trigger)
 python test_run.py                        # default — uses category rotation
@@ -44,7 +45,7 @@ python -m agent.main
 
 # 5. Run the web app (landing, auth, protected feed)
 #    Do NOT use `python -m http.server` — /signup, /login, and auth will 404.
-python run_web.py
+python3 run_web.py
 # → http://localhost:8000/          landing page
 # → http://localhost:8000/signup    create account
 # → http://localhost:8000/login     sign in
@@ -93,7 +94,7 @@ output/users/{user_id}/   # per-user web runs (feed, traces, scorecard)
 traces/trace_<run_id>.json # scheduled-agent traces (global TRACES_DIR)
 state/analysed_topics.json # 48hr cooldown tracker
 state/category_rotation.json
-state/users.db            # web app users + agent_jobs (git-ignored with state/)
+# Web app: shared Supabase public.users + public.agent_jobs (see DATABASE_URL)
 ```
 
 ---

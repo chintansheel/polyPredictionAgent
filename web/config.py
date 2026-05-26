@@ -13,12 +13,20 @@ ROOT = Path(__file__).resolve().parent.parent
 UI_DIR = ROOT / "ui"
 OUTPUT_DIR = Path(os.getenv("OUTPUT_DIR", "./output")).resolve()
 AUTH_SECRET = os.getenv("AUTH_SECRET", "dev-secret-change-in-production")
-USERS_DB_PATH = Path(os.getenv("USERS_DB_PATH", "./state/users.db")).resolve()
+DATABASE_URL = os.getenv("DATABASE_URL", "")
 WEB_PORT = int(os.getenv("WEB_PORT", "8000"))
 SESSION_MAX_AGE = 60 * 60 * 24 * 30  # 30 days
 COOKIE_NAME = "session"
 WEB_MAX_CONCURRENT_RUNS = int(os.getenv("WEB_MAX_CONCURRENT_RUNS", "1"))
 WEB_RUNS_PER_USER_PER_DAY = int(os.getenv("WEB_RUNS_PER_USER_PER_DAY", "5"))
+
+# Shared Supabase public.users column mapping (orchestrator app schema)
+USERS_TABLE = os.getenv("USERS_TABLE", "users")
+USERS_COL_ID = os.getenv("USERS_COL_ID", "id")
+USERS_COL_EMAIL = os.getenv("USERS_COL_EMAIL", "email")
+USERS_COL_NAME = os.getenv("USERS_COL_NAME", "username")
+USERS_COL_PASSWORD = os.getenv("USERS_COL_PASSWORD", "password_hash")
+USERS_COL_CREATED = os.getenv("USERS_COL_CREATED", "created_at")
 
 # Password reset (Brevo transactional email)
 BREVO_API_KEY = os.getenv("BREVO_API_KEY", "")
