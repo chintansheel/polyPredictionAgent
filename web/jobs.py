@@ -23,6 +23,7 @@ from agent.orchestrator import (  # noqa: E402
     run_reanalysis_for_market,
     run_reanalysis_for_run_id,
 )
+from agent.run_input import parse_keyword_or_polymarket_url  # noqa: E402
 from agent.writer import OutputContext, get_card_by_run_id  # noqa: E402
 from web import db  # noqa: E402
 from web.config import WEB_MAX_CONCURRENT_RUNS  # noqa: E402
@@ -61,10 +62,19 @@ def _execute_job(job_id: str) -> None:
     try:
         mode = job["run_mode"]
         if mode == "fresh":
+            topic = job.get("topic")
+            market_id = job.get("market_id")
+            if topic and not market_id and not job.get("category"):
+                keyword, parsed_market = parse_keyword_or_polymarket_url(topic)
+                if parsed_market:
+                    market_id = parsed_market
+                    topic = None
+                elif keyword:
+                    topic = keyword
             card = run_once(
                 category_override=job.get("category"),
-                keyword_filter=job.get("topic"),
-                market_id_override=job.get("market_id"),
+                keyword_filter=topic,
+                market_id_override=market_id,
                 force=bool(job.get("force")),
                 output_ctx=output_ctx,
             )

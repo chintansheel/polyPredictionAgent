@@ -80,9 +80,17 @@ function renderCard(card) {
   }
 
   let failureHtml = '';
-  if (card.status === 'failed' && card.failure_reason) {
-    failureHtml = `<div class="failure-box">${safe(card.failure_reason)}</div>`;
+  if (card.status === 'failed') {
+    failureHtml = `<div class="sub-pred" style="border-color:rgba(255,118,118,0.4);margin-bottom:14px">
+      <h3 class="section">Run failed</h3>
+      <div style="font-size:13px;color:var(--muted)">${safe(card.failure_reason || 'Unknown error')}</div>
+      ${card.failed_at_layer != null ? `<div style="font-size:13px;color:var(--muted);margin-top:6px">Stopped after layer <strong>${card.failed_at_layer}</strong>.</div>` : ''}
+    </div>`;
   }
+
+  const selectionHtml = m.selection_reason
+    ? `<div style="font-size:13px;color:var(--muted);margin-top:8px"><strong style="color:var(--text)">Why this market:</strong> ${safe(m.selection_reason)}</div>`
+    : '';
 
   el.innerHTML = `
     <div class="card-head">
@@ -97,6 +105,7 @@ function renderCard(card) {
         ${m.polymarket_url ? `<a class="pill" href="${safe(m.polymarket_url)}" target="_blank" rel="noopener">polymarket ↗</a>` : ''}
         <span class="pill pill-timestamp">${safe(fmtTimestamp(card.timestamp))}</span>
       </div>
+      ${selectionHtml}
     </div>
     <div class="card-body">
       <div>
@@ -119,6 +128,8 @@ function renderCard(card) {
           <div class="call">Verdict: ${safe(v.call || '—')} (${fmtPct(v.confidence)})</div>
           <div>${safe(v.reasoning || '')}</div>
         </div>
+        ${v.watch_up ? `<div style="font-size:13px;color:var(--muted);margin-top:10px"><strong style="color:var(--text)">Watch up:</strong> ${safe(v.watch_up)}</div>` : ''}
+        ${v.watch_down ? `<div style="font-size:13px;color:var(--muted)"><strong style="color:var(--text)">Watch down:</strong> ${safe(v.watch_down)}</div>` : ''}
         ${changesHtml}
       </div>
       <div>
