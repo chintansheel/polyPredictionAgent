@@ -9,3 +9,4 @@ state/
 output/
 traces/
 .DS_Store
+web/foretell.db
