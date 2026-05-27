@@ -16,6 +16,8 @@ from __future__ import annotations
 
 import json
 import os
+import threading
+from dataclasses import dataclass
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Optional
@@ -28,9 +30,53 @@ LATEST_FILE = OUTPUT_DIR / "latest.json"
 RUN_HEALTH_FILE = OUTPUT_DIR / "run_health.json"
 SCORECARD_FILE = OUTPUT_DIR / "scorecard.json"
 
+_feed_lock = threading.Lock()
 
-def _ensure_dir() -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+
+@dataclass(frozen=True)
+class OutputContext:
+    """Per-user (or custom) output directory for feed, traces, and scorecard."""
+
+    base_dir: Path
+    user_id: Optional[str] = None
+
+    @classmethod
+    def for_user(cls, user_id: str) -> OutputContext:
+        return cls(base_dir=OUTPUT_DIR / "users" / user_id, user_id=user_id)
+
+
+def _resolve_ctx(ctx: Optional[OutputContext]) -> OutputContext:
+    if ctx is not None:
+        return ctx
+    return OutputContext(base_dir=OUTPUT_DIR)
+
+
+def _feed_file(ctx: OutputContext) -> Path:
+    return ctx.base_dir / "feed.json"
+
+
+def _latest_file(ctx: OutputContext) -> Path:
+    return ctx.base_dir / "latest.json"
+
+
+def _run_health_file(ctx: OutputContext) -> Path:
+    return ctx.base_dir / "run_health.json"
+
+
+def _scorecard_file(ctx: OutputContext) -> Path:
+    return ctx.base_dir / "scorecard.json"
+
+
+def traces_dir_for(ctx: Optional[OutputContext]) -> str:
+    if ctx is not None:
+        return str(ctx.base_dir / "traces")
+    return os.getenv("TRACES_DIR", "traces")
+
+
+def _ensure_dir(ctx: Optional[OutputContext] = None) -> OutputContext:
+    resolved = _resolve_ctx(ctx)
+    resolved.base_dir.mkdir(parents=True, exist_ok=True)
+    return resolved
 
 
 def _iso(dt: datetime) -> str:
@@ -122,6 +168,7 @@ def build_card(
     status: str = "ok",
     failed_at_layer: Optional[int] = None,
     failure_reason: Optional[str] = None,
+    requested_by_user_id: Optional[str] = None,
 ) -> dict:
     """Merge the agent's JSON with run metadata into a full card."""
     card: dict[str, Any] = {
@@ -171,6 +218,9 @@ def build_card(
         card["failed_at_layer"] = failed_at_layer
         card["failure_reason"] = failure_reason
 
+    if requested_by_user_id:
+        card["requested_by_user_id"] = requested_by_user_id
+
     return card
 
 
@@ -178,48 +228,58 @@ def build_card(
 # file writers
 # ---------------------------------------------------------------------------
 
-def _load_feed() -> list[dict]:
-    if not FEED_FILE.exists():
+def _load_feed(ctx: Optional[OutputContext] = None) -> list[dict]:
+    resolved = _resolve_ctx(ctx)
+    feed_path = _feed_file(resolved)
+    if not feed_path.exists():
         return []
     try:
-        return json.loads(FEED_FILE.read_text())
+        return json.loads(feed_path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return []
 
 
-def append_card(card: dict) -> None:
-    _ensure_dir()
-    feed = _load_feed()
-    feed.append(card)
-    FEED_FILE.write_text(json.dumps(feed, indent=2))
-    LATEST_FILE.write_text(json.dumps(card, indent=2))
+def append_card(card: dict, ctx: Optional[OutputContext] = None) -> None:
+    resolved = _ensure_dir(ctx)
+    feed_path = _feed_file(resolved)
+    latest_path = _latest_file(resolved)
+    with _feed_lock:
+        feed = _load_feed(resolved)
+        feed.append(card)
+        feed_path.write_text(json.dumps(feed, indent=2), encoding="utf-8")
+        latest_path.write_text(json.dumps(card, indent=2), encoding="utf-8")
+    refresh_scorecard(resolved)
 
 
-def get_card_by_run_id(run_id: str) -> Optional[dict]:
-    for c in _load_feed():
+def get_card_by_run_id(
+    run_id: str, ctx: Optional[OutputContext] = None
+) -> Optional[dict]:
+    for c in _load_feed(ctx):
         if c.get("id") == run_id:
             return c
     return None
 
 
-def most_recent_card_for_market(market_id: str) -> Optional[dict]:
-    feed = _load_feed()
+def most_recent_card_for_market(
+    market_id: str, ctx: Optional[OutputContext] = None
+) -> Optional[dict]:
+    feed = _load_feed(ctx)
     matches = [c for c in feed if (c.get("market") or {}).get("id") == market_id]
     if not matches:
         return None
     return matches[-1]
 
 
-def next_run_number() -> int:
-    return len(_load_feed()) + 1
+def next_run_number(ctx: Optional[OutputContext] = None) -> int:
+    return len(_load_feed(ctx)) + 1
 
 
 # ---------------------------------------------------------------------------
 # run health (Level 1 validation)
 # ---------------------------------------------------------------------------
 
-def _previous_confidence() -> Optional[float]:
-    feed = _load_feed()
+def _previous_confidence(ctx: Optional[OutputContext] = None) -> Optional[float]:
+    feed = _load_feed(ctx)
     if len(feed) < 1:
         return None
     last = feed[-1]
@@ -229,8 +289,8 @@ def _previous_confidence() -> Optional[float]:
         return None
 
 
-def _recent_retries(window: int = 10) -> int:
-    feed = _load_feed()[-window:]
+def _recent_retries(window: int = 10, ctx: Optional[OutputContext] = None) -> int:
+    feed = _load_feed(ctx)[-window:]
     total = 0
     for c in feed:
         try:
@@ -240,7 +300,9 @@ def _recent_retries(window: int = 10) -> int:
     return total
 
 
-def compute_run_health(card: dict, tracer: RunTracer) -> dict:
+def compute_run_health(
+    card: dict, tracer: RunTracer, ctx: Optional[OutputContext] = None
+) -> dict:
     spans = tracer.spans
     tool_spans = [s for s in spans if s.name.startswith("tool.")]
     tools_called = [
@@ -285,7 +347,7 @@ def compute_run_health(card: dict, tracer: RunTracer) -> dict:
     ) if layer2_query else False
 
     confidence = (card.get("sub_prediction") or {}).get("confidence")
-    prev_conf = _previous_confidence()
+    prev_conf = _previous_confidence(ctx)
     if confidence is None or prev_conf is None:
         confidence_not_flat = True  # first run gets a pass
     else:
@@ -301,7 +363,7 @@ def compute_run_health(card: dict, tracer: RunTracer) -> dict:
         "confidence_not_flat": bool(confidence_not_flat),
         "tavily_extract_used": bool(extract_used),
         "no_empty_extracts": not any_empty_extract,
-        "retry_logic_fired_recent": _recent_retries(window=10) > 0,
+        "retry_logic_fired_recent": _recent_retries(window=10, ctx=ctx) > 0,
     }
 
     return {
@@ -320,12 +382,13 @@ def compute_run_health(card: dict, tracer: RunTracer) -> dict:
     }
 
 
-def write_run_health(report: dict) -> None:
-    _ensure_dir()
+def write_run_health(report: dict, ctx: Optional[OutputContext] = None) -> None:
+    resolved = _ensure_dir(ctx)
+    health_path = _run_health_file(resolved)
     history: list[dict] = []
-    if RUN_HEALTH_FILE.exists():
+    if health_path.exists():
         try:
-            existing = json.loads(RUN_HEALTH_FILE.read_text())
+            existing = json.loads(health_path.read_text(encoding="utf-8"))
             if isinstance(existing, dict) and isinstance(existing.get("history"), list):
                 history = existing["history"]
             elif isinstance(existing, list):
@@ -337,46 +400,102 @@ def write_run_health(report: dict) -> None:
         "latest": report,
         "history": history[-50:],
     }
-    RUN_HEALTH_FILE.write_text(json.dumps(payload, indent=2))
+    health_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 # ---------------------------------------------------------------------------
 # scorecard
 # ---------------------------------------------------------------------------
 
-def init_scorecard() -> dict:
+def compute_scorecard_stats(feed: list[dict]) -> dict:
+    """Roll up sub-prediction and verdict counts from feed cards."""
+    sub_total = 0
+    sub_resolved = 0
+    sub_correct = 0
+    verdict_total = 0
+    verdict_resolved = 0
+    verdict_correct = 0
+
+    for card in feed:
+        sub = card.get("sub_prediction") or {}
+        verdict = card.get("verdict") or {}
+        sub_total += 1
+        verdict_total += 1
+
+        if sub.get("actual_value") is not None:
+            sub_resolved += 1
+            if sub.get("prediction_correct"):
+                sub_correct += 1
+        if "correct" in verdict:
+            verdict_resolved += 1
+            if verdict.get("correct"):
+                verdict_correct += 1
+
     return {
-        "updated_at": _now_iso(),
         "sub_predictions": {
-            "total": 0, "resolved": 0,
-            "correct_within_range": 0, "accuracy": 0.0,
+            "total": sub_total,
+            "resolved": sub_resolved,
+            "correct_within_range": sub_correct,
+            "accuracy": round(sub_correct / sub_resolved, 4) if sub_resolved else 0.0,
         },
         "market_verdicts": {
-            "total": 0, "resolved": 0,
-            "correct": 0, "accuracy": 0.0,
+            "total": verdict_total,
+            "resolved": verdict_resolved,
+            "correct": verdict_correct,
+            "accuracy": round(verdict_correct / verdict_resolved, 4)
+            if verdict_resolved
+            else 0.0,
         },
     }
 
 
-def load_scorecard() -> dict:
-    if not SCORECARD_FILE.exists():
+def refresh_scorecard(ctx: Optional[OutputContext] = None) -> dict:
+    """Recompute scorecard stats from the current feed and persist."""
+    resolved = _ensure_dir(ctx)
+    feed = _load_feed(resolved)
+    scorecard = load_scorecard(resolved)
+    scorecard.update(compute_scorecard_stats(feed))
+    save_scorecard(scorecard, resolved)
+    return scorecard
+
+
+def init_scorecard() -> dict:
+    return {
+        "updated_at": _now_iso(),
+        **compute_scorecard_stats([]),
+    }
+
+
+def load_scorecard(ctx: Optional[OutputContext] = None) -> dict:
+    resolved = _resolve_ctx(ctx)
+    path = _scorecard_file(resolved)
+    if not path.exists():
         return init_scorecard()
     try:
-        return json.loads(SCORECARD_FILE.read_text())
+        return json.loads(path.read_text(encoding="utf-8"))
     except (json.JSONDecodeError, OSError):
         return init_scorecard()
 
 
-def save_scorecard(payload: dict) -> None:
-    _ensure_dir()
+def save_scorecard(payload: dict, ctx: Optional[OutputContext] = None) -> None:
+    resolved = _ensure_dir(ctx)
+    path = _scorecard_file(resolved)
     payload["updated_at"] = _now_iso()
-    SCORECARD_FILE.write_text(json.dumps(payload, indent=2))
+    path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
-def save_feed(feed: list[dict]) -> None:
-    _ensure_dir()
-    FEED_FILE.write_text(json.dumps(feed, indent=2))
+def save_feed(feed: list[dict], ctx: Optional[OutputContext] = None) -> None:
+    resolved = _ensure_dir(ctx)
+    _feed_file(resolved).write_text(json.dumps(feed, indent=2), encoding="utf-8")
 
 
-def load_feed() -> list[dict]:
-    return _load_feed()
+def load_feed(ctx: Optional[OutputContext] = None) -> list[dict]:
+    return _load_feed(ctx)
+
+
+def user_feed_path(user_id: str) -> Path:
+    return _feed_file(OutputContext.for_user(user_id))
+
+
+def user_scorecard_path(user_id: str) -> Path:
+    return _scorecard_file(OutputContext.for_user(user_id))

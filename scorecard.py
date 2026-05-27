@@ -24,6 +24,7 @@ load_dotenv()
 
 from agent.tools import gamma  # noqa: E402
 from agent.writer import (  # noqa: E402
+    compute_scorecard_stats,
     init_scorecard,
     load_feed,
     load_scorecard,
@@ -84,13 +85,6 @@ def main() -> int:
 
     scorecard = load_scorecard() or init_scorecard()
 
-    sub_total = 0
-    sub_resolved = 0
-    sub_correct = 0
-    verdict_total = 0
-    verdict_resolved = 0
-    verdict_correct = 0
-
     updates = 0
     for card in feed:
         sub = card.get("sub_prediction") or {}
@@ -99,12 +93,7 @@ def main() -> int:
         market_id = market_summary.get("id")
 
         if not market_id:
-            sub_total += 1
-            verdict_total += 1
             continue
-
-        sub_total += 1
-        verdict_total += 1
 
         # Has the user (or a previous run) already recorded an actual value?
         already_resolved = sub.get("actual_value") is not None
@@ -127,32 +116,14 @@ def main() -> int:
                     verdict["correct"] = abs(prob_now - 0.5) < 0.1
                 updates += 1
 
-        # roll up stats
-        if sub.get("actual_value") is not None:
-            sub_resolved += 1
-            if sub.get("prediction_correct"):
-                sub_correct += 1
-        if "correct" in verdict:
-            verdict_resolved += 1
-            if verdict["correct"]:
-                verdict_correct += 1
-
         # write back into card object
         card["sub_prediction"] = sub
         card["verdict"] = verdict
 
-    scorecard["sub_predictions"] = {
-        "total": sub_total,
-        "resolved": sub_resolved,
-        "correct_within_range": sub_correct,
-        "accuracy": round(sub_correct / sub_resolved, 4) if sub_resolved else 0.0,
-    }
-    scorecard["market_verdicts"] = {
-        "total": verdict_total,
-        "resolved": verdict_resolved,
-        "correct": verdict_correct,
-        "accuracy": round(verdict_correct / verdict_resolved, 4) if verdict_resolved else 0.0,
-    }
+    stats = compute_scorecard_stats(feed)
+    scorecard.update(stats)
+    sub = stats["sub_predictions"]
+    mv = stats["market_verdicts"]
     scorecard["last_run"] = datetime.now(timezone.utc).isoformat().replace(
         "+00:00", "Z"
     )
@@ -162,9 +133,9 @@ def main() -> int:
 
     print(
         f"Scorecard updated. Updates={updates}. "
-        f"Sub-predictions {sub_correct}/{sub_resolved} resolved correctly "
-        f"(of {sub_total} total). "
-        f"Market verdicts {verdict_correct}/{verdict_resolved}."
+        f"Sub-predictions {sub['correct_within_range']}/{sub['resolved']} resolved correctly "
+        f"(of {sub['total']} total). "
+        f"Market verdicts {mv['correct']}/{mv['resolved']}."
     )
     return 0
 
