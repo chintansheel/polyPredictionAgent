@@ -151,7 +151,7 @@ function renderStats(scorecard) {
   const sp = scorecard.sub_predictions || {};
   const mv = scorecard.market_verdicts || {};
   return `
-    <div class="stat">Total runs: <strong>${sp.total || 0}</strong></div>
+    <div class="stat">Total analyses: <strong>${sp.total || 0}</strong></div>
     <div class="stat">Sub-predictions resolved: <strong>${sp.resolved || 0}</strong></div>
     <div class="stat">Sub-prediction accuracy: <strong>${fmtPct(sp.accuracy)}</strong></div>
     <div class="stat">Verdict accuracy: <strong>${fmtPct(mv.accuracy)}</strong></div>

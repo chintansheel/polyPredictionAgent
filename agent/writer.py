@@ -248,6 +248,7 @@ def append_card(card: dict, ctx: Optional[OutputContext] = None) -> None:
         feed.append(card)
         feed_path.write_text(json.dumps(feed, indent=2), encoding="utf-8")
         latest_path.write_text(json.dumps(card, indent=2), encoding="utf-8")
+    refresh_scorecard(resolved)
 
 
 def get_card_by_run_id(
@@ -406,17 +407,62 @@ def write_run_health(report: dict, ctx: Optional[OutputContext] = None) -> None:
 # scorecard
 # ---------------------------------------------------------------------------
 
+def compute_scorecard_stats(feed: list[dict]) -> dict:
+    """Roll up sub-prediction and verdict counts from feed cards."""
+    sub_total = 0
+    sub_resolved = 0
+    sub_correct = 0
+    verdict_total = 0
+    verdict_resolved = 0
+    verdict_correct = 0
+
+    for card in feed:
+        sub = card.get("sub_prediction") or {}
+        verdict = card.get("verdict") or {}
+        sub_total += 1
+        verdict_total += 1
+
+        if sub.get("actual_value") is not None:
+            sub_resolved += 1
+            if sub.get("prediction_correct"):
+                sub_correct += 1
+        if "correct" in verdict:
+            verdict_resolved += 1
+            if verdict.get("correct"):
+                verdict_correct += 1
+
+    return {
+        "sub_predictions": {
+            "total": sub_total,
+            "resolved": sub_resolved,
+            "correct_within_range": sub_correct,
+            "accuracy": round(sub_correct / sub_resolved, 4) if sub_resolved else 0.0,
+        },
+        "market_verdicts": {
+            "total": verdict_total,
+            "resolved": verdict_resolved,
+            "correct": verdict_correct,
+            "accuracy": round(verdict_correct / verdict_resolved, 4)
+            if verdict_resolved
+            else 0.0,
+        },
+    }
+
+
+def refresh_scorecard(ctx: Optional[OutputContext] = None) -> dict:
+    """Recompute scorecard stats from the current feed and persist."""
+    resolved = _ensure_dir(ctx)
+    feed = _load_feed(resolved)
+    scorecard = load_scorecard(resolved)
+    scorecard.update(compute_scorecard_stats(feed))
+    save_scorecard(scorecard, resolved)
+    return scorecard
+
+
 def init_scorecard() -> dict:
     return {
         "updated_at": _now_iso(),
-        "sub_predictions": {
-            "total": 0, "resolved": 0,
-            "correct_within_range": 0, "accuracy": 0.0,
-        },
-        "market_verdicts": {
-            "total": 0, "resolved": 0,
-            "correct": 0, "accuracy": 0.0,
-        },
+        **compute_scorecard_stats([]),
     }
 
 

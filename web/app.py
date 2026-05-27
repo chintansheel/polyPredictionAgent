@@ -20,10 +20,10 @@ from agent.selector import CATEGORY_ROTATION  # noqa: E402
 from agent.tools import gamma  # noqa: E402
 from agent.writer import (  # noqa: E402
     OutputContext,
-    init_scorecard,
+    compute_scorecard_stats,
     load_feed,
+    load_scorecard,
     user_feed_path,
-    user_scorecard_path,
 )
 from web import auth, db, jobs
 from web.auth import (
@@ -168,11 +168,10 @@ def api_feed(user: CurrentUser) -> JSONResponse:
 @app.get("/api/scorecard")
 def api_scorecard(user: CurrentUser) -> JSONResponse:
     ctx = _user_ctx(user)
-    path = user_scorecard_path(user["id"])
-    if not path.is_file():
-        return JSONResponse(init_scorecard())
-    data = json.loads(path.read_text(encoding="utf-8"))
-    return JSONResponse(data)
+    feed = load_feed(ctx)
+    scorecard = load_scorecard(ctx)
+    scorecard.update(compute_scorecard_stats(feed))
+    return JSONResponse(scorecard)
 
 
 @app.get("/api/categories")

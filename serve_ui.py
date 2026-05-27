@@ -28,6 +28,7 @@ load_dotenv()
 from flask import Flask, jsonify, request, send_from_directory  # noqa: E402
 
 from agent.run_input import parse_keyword_or_polymarket_url  # noqa: E402
+from agent.writer import compute_scorecard_stats, load_feed, load_scorecard  # noqa: E402
 
 app = Flask(__name__, static_folder="ui", static_url_path="/static")
 _run_lock = threading.Lock()
@@ -52,13 +53,10 @@ def api_feed() -> object:
 
 @app.get("/api/scorecard")
 def api_scorecard() -> object:
-    path = ROOT / "output" / "scorecard.json"
-    if not path.exists():
-        return jsonify({}), 404
-    try:
-        return jsonify(json.loads(path.read_text(encoding="utf-8")))
-    except (json.JSONDecodeError, OSError):
-        return jsonify({}), 404
+    feed = load_feed()
+    scorecard = load_scorecard()
+    scorecard.update(compute_scorecard_stats(feed))
+    return jsonify(scorecard)
 
 
 @app.get("/api/trace/<run_id>")
