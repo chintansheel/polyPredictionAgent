@@ -1,0 +1,15 @@
+[Unit]
+Description=Foretell web app (FastAPI / uvicorn)
+After=network.target
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/var/www/html/polyPredictionAgent
+EnvironmentFile=/var/www/html/polyPredictionAgent/.env
+ExecStart=/var/www/html/polyPredictionAgent/.venv/bin/python -m uvicorn web.app:app --host 127.0.0.1 --port 8970 --workers 1
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
