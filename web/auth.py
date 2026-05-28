@@ -177,6 +177,17 @@ def forgot_password(body: ForgotPasswordBody) -> dict:
         else:
             token = _make_reset_token(user["id"])
             reset_url = f"{RESET_PASSWORD_BASE_URL}/reset-password?token={token}"
+            email_local = body.email.split("@", 1)[0]
+            if email_local:
+                email_hint = f"{email_local[:2]}***"
+            else:
+                email_hint = "***"
+            logger.warning(
+                "forgot_password_email_attempt user_id=%s email_hint=%s reset_base_url_set=%s",
+                user["id"],
+                email_hint,
+                bool(RESET_PASSWORD_BASE_URL),
+            )
             try:
                 send_password_reset_email(
                     to_email=user["email"],
